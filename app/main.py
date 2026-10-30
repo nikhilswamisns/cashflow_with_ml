@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+import os
 from app import db
 from app import auth
 from app.output.json_api import router
@@ -11,7 +12,9 @@ app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_methods=['*'], all
 @app.on_event('startup')
 def on_startup():
     db.init_db()
-    if not auth.load_users():
+    if LOCAL_NO_LOGIN:
+        print('\n  LOGIN DISABLED (CASHFLOW_DISABLE_AUTH=1) for requests from this computer only.\n', flush=True)
+    elif not auth.load_users():
         print('\n  NO LOGIN USER SET UP. Create one with:  python tools\\add_user.py\n', flush=True)
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -29,11 +32,18 @@ app.add_middleware(NoCacheStaticMiddleware)
 from fastapi.responses import RedirectResponse, FileResponse, HTMLResponse, JSONResponse
 
 
+# Local development only: CASHFLOW_DISABLE_AUTH=1 skips the login for requests from this computer (127.0.0.1).
+LOCAL_NO_LOGIN = os.getenv('CASHFLOW_DISABLE_AUTH', '').strip().lower() in ('1', 'true', 'yes')
+
+
 class AuthMiddleware(BaseHTTPMiddleware):
     """No page or API call without a logged-in session (app/auth.py). Pages redirect to /login; API calls get 401."""
     async def dispatch(self, request, call_next):
         path = request.url.path
         if path in auth.PUBLIC_PATHS or request.method == 'OPTIONS':
+            return await call_next(request)
+        if LOCAL_NO_LOGIN and (request.client.host if request.client else '') in ('127.0.0.1', '::1'):
+            request.state.user = 'local'
             return await call_next(request)
         user = auth.read_token(request.cookies.get(auth.COOKIE))
         if user:
@@ -53,6 +63,8 @@ static_dir = Path(__file__).parent.parent / 'static'
 # ------------------------------------------------------------------ login / logout / logo
 @app.get('/login', include_in_schema=False)
 def login_page(request: Request):
+    if LOCAL_NO_LOGIN and (request.client.host if request.client else '') in ('127.0.0.1', '::1'):
+        return RedirectResponse(url='/ui/', status_code=303)
     if auth.read_token(request.cookies.get(auth.COOKIE)):
         return RedirectResponse(url='/ui/', status_code=303)
     html = (static_dir / 'login.html').read_text(encoding='utf-8')
