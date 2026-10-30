@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cash Flow Forecasting Engine — Modern Executive Dashboard</title>
+  <meta name="description" content="Automated deterministic cash flow forecasting engine with live analytics, interactive charts, and multi-file batch ingestion." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/ui/style.css?v=5" />
+</head>
+<body>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">CF</div>
+    <div class="logo-text">
+      <span class="logo-title">CashFlow Engine</span>
+      <span class="logo-sub">Phase 1 · Auto Ingestion</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <button class="nav-btn active" id="nav-dashboard" onclick="showSection('dashboard')">
+      <span class="nav-icon">📊</span> Executive Dashboard
+    </button>
+    <button class="nav-btn" id="nav-upload" onclick="showSection('upload')">
+      <span class="nav-icon">⚡</span> Auto-Ingest Files
+    </button>
+    <button class="nav-btn" id="nav-matrix" onclick="showSection('matrix')">
+      <span class="nav-icon">📈</span> 52-Week Matrix
+    </button>
+    <button class="nav-btn" id="nav-config" onclick="showSection('config')">
+      <span class="nav-icon">⚙️</span> Assumptions & Rules
+    </button>
+  </nav>
+
+  <div class="sidebar-run-selector">
+    <label for="active-run-select" class="selector-label">Active Forecast Run</label>
+    <select id="active-run-select" onchange="onRunSelectChange(this.value)">
+      <option value="">Loading runs…</option>
+    </select>
+    <button class="btn-ghost run-archive-btn" id="btn-open-archive" onclick="openRunArchive()" title="Open this run's Zoho data folder">📂 Open archive folder</button>
+  </div>
+  <div class="sidebar-tools">
+    <div class="status-badge checking" id="global-status" onclick="checkZohoStatus()" title="Click to re-check the Zoho connection">Checking Zoho…</div>
+    <button class="btn-ghost" id="btn-rerun-archive" onclick="document.getElementById('rerun-file').click()"
+          title="Rebuild a forecast from a saved zoho_snapshot.json in the archive folder">
+      🔁 Re-run from archive
+    </button>
+    <input type="file" id="rerun-file" accept=".json,application/json" style="display:none" onchange="rerunFromArchive(this)" />
+    <a class="btn-ghost" id="btn-api-docs" href="/docs" target="_blank" rel="noopener" title="Open the API page (advanced) in a new tab" style="text-decoration:none;">🛠 API Docs</a>
+  </div>
+
+  <div class="sidebar-confidence-legend">
+    <div class="legend-title">Confidence Tier</div>
+    <div class="legend-item"><span class="dot verified_live"></span> Verified Live (Invoices / Bills)</div>
+    <div class="legend-item"><span class="dot manual_entry"></span> Manual Bank Statement</div>
+    <div class="legend-item"><span class="dot periodic_estimate"></span> Trailing Run-rate (Resellers)</div>
+    <div class="legend-item"><span class="dot fixed_assumption"></span> Fixed Contract / Payroll</div>
+  </div>
+</aside>
+
+<main class="main" id="main-content">
+  <header class="topbar">
+    <div class="topbar-left">
+      <h1 class="page-title" id="page-title">Executive Dashboard</h1>
+      <span class="date-chip" id="topbar-date-chip">Forecast: 2026-08-14</span>
+    </div>
+    <div class="topbar-right">
+      <div class="sync-group" title="Forecast week 1 = the Friday on or before this date">
+        <label for="sync-date" class="sync-label">Week 1 from</label>
+        <input type="date" id="sync-date" class="sync-date" />
+        <button class="btn-primary" id="btn-sync-zoho" onclick="syncZohoLive()">
+          🔄 Sync Zoho
+        </button>
+      </div>
+      <button class="btn-secondary" id="btn-download-excel" onclick="downloadCurrentRunExcel()">
+        ⬇ Export
+      </button>
+      <button class="btn-secondary" id="btn-opening-cash" onclick="openOpeningCash()" title="Set the bank balance as opening cash for the selected run">
+        🏦 Opening Cash
+      </button>
+    </div>
+  </header>
+
+  <section class="content-section" id="section-dashboard">
+    <div class="cards-row">
+      <div class="stat-card" id="card-opening-cash">
+        <div class="stat-header">
+          <span class="stat-label">Opening Cash Balance</span>
+          <span class="badge verified">Live Bank</span>
+        </div>
+        <div class="stat-value text-emerald" id="stat-opening-cash">$47,479</div>
+        <div class="stat-sub" id="stat-opening-date">As-of 2026-08-14</div>
+      </div>
+
+      <div class="stat-card" id="card-lowest-cash">
+        <div class="stat-header">
+          <span class="stat-label">Lowest Cash Low-Point</span>
+          <span class="badge warning" id="badge-low-point">Runway Alert</span>
+        </div>
+        <div class="stat-value text-rose" id="stat-lowest-cash">-$358,395</div>
+        <div class="stat-sub" id="stat-lowest-week">Occurs at Week 9/11</div>
+      </div>
+
+      <div class="stat-card" id="card-ending-cash">
+        <div class="stat-header">
+          <span class="stat-label">Horizon Ending Cash</span>
+          <span class="badge accent">Projected</span>
+        </div>
+        <div class="stat-value text-cyan" id="stat-ending-cash">$662,063</div>
+        <div class="stat-sub" id="stat-net-growth">+ $614,584 (+1,294%)</div>
+      </div>
+
+      <div class="stat-card" id="card-net-burn">
+        <div class="stat-header">
+          <span class="stat-label">Total Inflow vs Outflow</span>
+          <span class="badge verified">52-Wk Totals</span>
+        </div>
+        <div class="stat-value" id="stat-total-totals">$2.96M / $2.18M</div>
+        <div class="stat-sub text-emerald" id="stat-avg-net">+$14,896 / wk avg net cash</div>
+      </div>
+
+      <div class="stat-card" id="card-total-ar">
+        <div class="stat-header">
+          <span class="stat-label">Accounts Receivable (A/R)</span>
+          <span class="badge verified">To Collect</span>
+        </div>
+        <div class="stat-value text-emerald" id="stat-total-ar">$234,089</div>
+        <div class="stat-sub" id="stat-sub-ar">Unpaid client invoices</div>
+      </div>
+
+      <div class="stat-card" id="card-total-ap">
+        <div class="stat-header">
+          <span class="stat-label">Accounts Payable (A/P)</span>
+          <span class="badge warning" id="badge-ap-status">To Pay</span>
+        </div>
+        <div class="stat-value text-amber" id="stat-total-ap">$764,041</div>
+        <div class="stat-sub" id="stat-sub-ap">Unpaid vendor bills & liabilities</div>
+      </div>
+    </div>
+
+    <div class="chart-panel full-width">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <span class="panel-title">Cash Position Trajectory (Rolling Forecast)</span>
+          <span class="panel-desc">Dynamic weekly ending cash balance with zero-cash threshold boundary</span>
+        </div>
+        <div class="chart-controls">
+          <span class="pill active" onclick="setChartTimeframe('52')">52 Weeks</span>
+          <span class="pill" onclick="setChartTimeframe('26')">26 Weeks</span>
+          <span class="pill" onclick="setChartTimeframe('13')">13 Weeks</span>
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="chart-cash-trajectory"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-panel full-width">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <span class="panel-title">Accounts Receivable vs. Accounts Payable (A/R & A/P Trajectory)</span>
+          <span class="panel-desc">Weekly customer invoice collections (A/R Inflow) vs vendor bills & liabilities (A/P to Pay)</span>
+        </div>
+        <div class="chart-controls">
+          <span class="pill active" onclick="setChartTimeframe('52')">52 Weeks</span>
+          <span class="pill" onclick="setChartTimeframe('26')">26 Weeks</span>
+          <span class="pill" onclick="setChartTimeframe('13')">13 Weeks</span>
+        </div>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="chart-ar-ap-trajectory"></canvas>
+      </div>
+    </div>
+
+    <div class="charts-grid-two">
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="panel-title">Weekly Inflows vs Outflows</span>
+            <span class="panel-desc">Revenues (Inflow) vs COGS & Opex (Outflow)</span>
+          </div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="chart-inflows-outflows"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-panel">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="panel-title">Revenue Stream Distribution</span>
+            <span class="panel-desc">SERVPRO vs Other Resellers ($42.2k/wk) vs A/R Invoices</span>
+          </div>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="chart-revenue-streams"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content-section hidden" id="section-upload">
+    <div class="upload-container">
+      <div class="panel upload-hero-panel">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="panel-title">Automated Batch Ingestion Engine</span>
+            <span class="panel-desc">Drag & drop raw Zoho Books files. The engine automatically identifies each report by column schema.</span>
+          </div>
+          <button class="btn-ghost" onclick="runQuickDemo()">⚡ Test with August 31 Raw Files</button>
+        </div>
+
+        <div class="dropzone" id="dropzone" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)" onclick="document.getElementById('file-input').click()">
+          <input type="file" id="file-input" multiple style="display:none" onchange="onFilesSelected(this.files)" accept=".xlsx,.xls,.csv" />
+          <div class="dropzone-inner">
+            <div class="dropzone-icon">📁</div>
+            <div class="dropzone-title">Drop your Zoho Books exports & Bank Statement here</div>
+            <div class="dropzone-sub">Accepts <code>Invoice Details.xlsx</code>, <code>Bill Details.xlsx</code>, <code>Sales Order Details.xls</code>, <code>Purchase Order Details.xlsx</code>, and <code>Bank Statements</code> (.xlsx, .xls, .csv)</div>
+            <button type="button" class="btn-secondary" style="margin-top:14px;">Browse Files</button>
+          </div>
+        </div>
+
+        <div class="detected-files-card hidden" id="detected-files-card">
+          <div class="card-title">Detected Files Ready for Ingestion</div>
+          <div class="file-tags-list" id="file-tags-list"></div>
+        </div>
+
+        <div class="run-params-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="batch-opening-cash">Week 1 Opening Cash ($)</label>
+              <input type="number" id="batch-opening-cash" step="0.01" placeholder="47478.95 (or leave blank to auto-detect)" />
+            </div>
+            <div class="form-group">
+              <label for="batch-as-of">Forecast Start Friday</label>
+              <input type="date" id="batch-as-of" value="2026-08-14" />
+            </div>
+            <div class="form-group action-group">
+              <button class="btn-primary-large" id="btn-execute-batch" onclick="executeBatchUpload()">
+                🚀 Ingest & Generate 52-Week Forecast
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content-section hidden" id="section-matrix">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <span class="panel-title">52-Week Cash Flow Matrix</span>
+          <span class="panel-desc">Every cell calculated deterministically with full line-item audit trail</span>
+        </div>
+        <div class="matrix-actions">
+          <input type="text" id="matrix-search" placeholder="Filter line item / code…" oninput="filterMatrixTable()" />
+          <select id="matrix-timeframe-select" onchange="onMatrixTimeframeChange(this.value)">
+            <option value="52">52 Weeks</option>
+            <option value="26">26 Weeks</option>
+            <option value="13">13 Weeks</option>
+          </select>
+          <button class="btn-secondary" onclick="downloadCurrentRunExcel()">⬇ Download Excel</button>
+        </div>
+      </div>
+      <div id="matrix-container" class="matrix-wrapper">
+        <div class="empty-state">Loading cash flow matrix…</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content-section hidden" id="section-config">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <span class="panel-title">Engine Assumptions & Rule Tables</span>
+          <span class="panel-desc">View and adjust payroll schedules, recurring rent, loan amortizations, and run-rates</span>
+        </div>
+        <select id="config-table-select" onchange="loadConfigTable(this.value)">
+          <option value="assumptions">Assumptions & Rules</option>
+          <option value="corporate_accounts">Corporate Accounts</option>
+          <option value="freight_duty_vendors">Freight & Duty Vendors</option>
+          <option value="cc_category_coa_map">Credit Card Category Map</option>
+        </select>
+      </div>
+      <div class="config-editor">
+        <textarea id="config-json-textarea" rows="24"></textarea>
+        <div class="config-footer">
+          <button class="btn-primary" onclick="saveActiveConfig()">Save & Invalidate Cache</button>
+          <span class="config-note">Changes take effect immediately on next run calculation.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal-overlay hidden" id="drilldown-modal" onclick="closeDrilldown(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title">Cell Audit Drill-Down</div>
+        <div class="modal-sub" id="modal-sub">Line item source breakdown</div>
+      </div>
+      <button class="modal-close" onclick="closeDrilldown()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="opening-modal" onclick="closeOpeningCash(event)">
+  <div class="modal-content oc-modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Opening Cash</div>
+        <div class="modal-sub" id="oc-sub">Selected run</div>
+      </div>
+      <button class="modal-close" onclick="closeOpeningCash()">×</button>
+    </div>
+    <div class="modal-body">
+      <table class="oc-table" id="oc-table"></table>
+      <div class="oc-form">
+        <label>Bank balance (opening cash)<input type="number" step="0.01" id="oc-amount" placeholder="e.g. 189409.00" /></label>
+        <label>As of<input type="date" id="oc-date" /></label>
+      </div>
+      <div class="oc-note">The difference between the bank balance and the Zoho cash is shown in the forecast as a manual adjustment line (General Info row 45), replacing any logged adjustment in forecast_rules.json for this run.</div>
+      <div class="oc-actions">
+        <button class="btn-ghost" onclick="clearOpeningCash()">Use Zoho cash + logged adjustments</button>
+        <button class="btn-primary" onclick="applyOpeningCash()">Apply to this run</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/ui/app.js?v=5"></script>
+</body>
+</html>

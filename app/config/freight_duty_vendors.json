@@ -1,0 +1,11 @@
+{
+  "freight_vendors_exact": [
+    "C.H. Robinson International, Inc."
+  ],
+  "freight_reference_substrings": [
+    "EFE"
+  ],
+  "duty_vendors_exact": [
+    "US Customs and Border Protection"
+  ]
+}

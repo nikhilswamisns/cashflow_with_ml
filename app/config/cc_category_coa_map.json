@@ -1,0 +1,136 @@
+{
+  "mappings": [
+    {
+      "statement_category": "Subscriptions",
+      "coa_code": "7103",
+      "coa_label": "Microsoft",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Drawings",
+      "coa_code": "9904",
+      "coa_label": "Owner Disbursements",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "3PL Shipping",
+      "coa_code": "2101",
+      "coa_label": "3PL Shipping",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Disposal",
+      "coa_code": "2102",
+      "coa_label": "Disposal",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Misc Operations",
+      "coa_code": "2109",
+      "coa_label": "Misc Operations",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Promotional Items",
+      "coa_code": "5119",
+      "coa_label": "Promotional Items",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Printing/Mailings",
+      "coa_code": "5121",
+      "coa_label": "Printing/Mailings",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Misc Marketing",
+      "coa_code": "5125",
+      "coa_label": "Misc Marketing",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "SEO",
+      "coa_code": "5109",
+      "coa_label": "SEO",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Facebook Ads",
+      "coa_code": "5108",
+      "coa_label": "Facebook Ads",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Amazon Advertising",
+      "coa_code": "5107",
+      "coa_label": "Amazon Advertising",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Vehicle",
+      "coa_code": "4101",
+      "coa_label": "Vehicle",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Fuel",
+      "coa_code": "4102",
+      "coa_label": "Fuel",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Travel",
+      "coa_code": "4103",
+      "coa_label": "Travel",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Meals & Entertainment",
+      "coa_code": "4105",
+      "coa_label": "Meals & Entertainment",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Training",
+      "coa_code": "4109",
+      "coa_label": "Training",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Zoom",
+      "coa_code": "7110",
+      "coa_label": "Zoom",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Zoho",
+      "coa_code": "7111",
+      "coa_label": "Zoho",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Shopify",
+      "coa_code": "7113",
+      "coa_label": "Shopify",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Go Daddy",
+      "coa_code": "7114",
+      "coa_label": "Go Daddy",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Phone",
+      "coa_code": "7104",
+      "coa_label": "Phone",
+      "payment_method": "credit_card_15th"
+    },
+    {
+      "statement_category": "Computer/Internet",
+      "coa_code": "7102",
+      "coa_label": "Computer/Internet",
+      "payment_method": "credit_card_15th"
+    }
+  ]
+}

@@ -1,0 +1,475 @@
+{
+  "sections": {
+    "REVENUES": {
+      "row_range": [
+        7,
+        13
+      ],
+      "code_prefixes": [
+        "1100",
+        "1100.1",
+        "1100.2",
+        "1101",
+        "1102",
+        "1103"
+      ],
+      "special_rows": [
+        {
+          "label": "A/R Collection",
+          "row": 13,
+          "no_code": true
+        }
+      ],
+      "line_items": [
+        {
+          "coa_code": "1100",
+          "label": "Sales",
+          "row": 7
+        },
+        {
+          "coa_code": "1100.1",
+          "label": "SERVPRO Corporate Net-45",
+          "row": 8
+        },
+        {
+          "coa_code": "1100.2",
+          "label": "Other Resellers",
+          "row": 9
+        },
+        {
+          "coa_code": "1101",
+          "label": "Adjustments",
+          "row": 10
+        },
+        {
+          "coa_code": "1102",
+          "label": "Discount Given",
+          "row": 11
+        },
+        {
+          "coa_code": "1103",
+          "label": "Freight Billed",
+          "row": 12
+        },
+        {
+          "coa_code": "AR",
+          "label": "A/R Collection",
+          "row": 13
+        }
+      ]
+    },
+    "COGS": {
+      "row_range": [
+        17,
+        19
+      ],
+      "code_prefixes": [
+        "3100",
+        "3101",
+        "3102"
+      ],
+      "line_items": [
+        {
+          "coa_code": "3100",
+          "label": "COGS (Standard)",
+          "row": 17
+        },
+        {
+          "coa_code": "3101",
+          "label": "Inbound Freight",
+          "row": 18
+        },
+        {
+          "coa_code": "3102",
+          "label": "Inbound Duty",
+          "row": 19
+        }
+      ]
+    },
+    "OPERATIONS": {
+      "row_range": [
+        23,
+        31
+      ],
+      "code_prefixes": [
+        "2101",
+        "2102",
+        "2103",
+        "2104",
+        "2105",
+        "2106",
+        "2107",
+        "2108",
+        "2109"
+      ],
+      "line_items": [
+        {
+          "coa_code": "2101",
+          "label": "3PL Shipping",
+          "row": 23
+        },
+        {
+          "coa_code": "2102",
+          "label": "Amazon FBA Fees",
+          "row": 24
+        },
+        {
+          "coa_code": "2103",
+          "label": "Salaries - Operations",
+          "row": 25
+        },
+        {
+          "coa_code": "2104",
+          "label": "Payroll Taxes",
+          "row": 26
+        },
+        {
+          "coa_code": "2105",
+          "label": "Benefits",
+          "row": 27
+        },
+        {
+          "coa_code": "2106",
+          "label": "Office Rent",
+          "row": 28
+        },
+        {
+          "coa_code": "2107",
+          "label": "Utilities",
+          "row": 29
+        },
+        {
+          "coa_code": "2108",
+          "label": "Amazon Seller Fees",
+          "row": 30
+        },
+        {
+          "coa_code": "2109",
+          "label": "Misc Operations",
+          "row": 31
+        }
+      ]
+    },
+    "MARKETING": {
+      "row_range": [
+        37,
+        46
+      ],
+      "code_prefixes": [
+        "5101",
+        "5104",
+        "5107",
+        "5108",
+        "5109",
+        "5119",
+        "5121",
+        "5122",
+        "5123",
+        "5124",
+        "5125"
+      ],
+      "line_items": [
+        {
+          "coa_code": "5101",
+          "label": "Trade Shows",
+          "row": 37
+        },
+        {
+          "coa_code": "5104",
+          "label": "Marketing - Other",
+          "row": 38
+        },
+        {
+          "coa_code": "5107",
+          "label": "Amazon Advertising",
+          "row": 39
+        },
+        {
+          "coa_code": "5108",
+          "label": "Facebook Ads",
+          "row": 40
+        },
+        {
+          "coa_code": "5109",
+          "label": "SEO",
+          "row": 41
+        },
+        {
+          "coa_code": "5119",
+          "label": "Promotional Items",
+          "row": 42
+        },
+        {
+          "coa_code": "5121",
+          "label": "Printing/Mailings",
+          "row": 43
+        },
+        {
+          "coa_code": "5122",
+          "label": "Samples",
+          "row": 44
+        },
+        {
+          "coa_code": "5123",
+          "label": "Photography",
+          "row": 45
+        },
+        {
+          "coa_code": "5125",
+          "label": "Misc Marketing",
+          "row": 46
+        }
+      ]
+    },
+    "SELLING": {
+      "row_range": [
+        50,
+        59
+      ],
+      "code_prefixes": [
+        "4101",
+        "4102",
+        "4103",
+        "4105",
+        "4109",
+        "4112",
+        "4115",
+        "4116",
+        "4118"
+      ],
+      "line_items": [
+        {
+          "coa_code": "4101",
+          "label": "Vehicle",
+          "row": 50
+        },
+        {
+          "coa_code": "4102",
+          "label": "Fuel",
+          "row": 51
+        },
+        {
+          "coa_code": "4103",
+          "label": "Travel",
+          "row": 52
+        },
+        {
+          "coa_code": "4105",
+          "label": "Meals & Entertainment",
+          "row": 53
+        },
+        {
+          "coa_code": "4109",
+          "label": "Training",
+          "row": 54
+        },
+        {
+          "coa_code": "4112",
+          "label": "Commissions",
+          "row": 55
+        },
+        {
+          "coa_code": "4115",
+          "label": "Salaries - Selling",
+          "row": 56
+        },
+        {
+          "coa_code": "4116",
+          "label": "Selling - Other",
+          "row": 57
+        },
+        {
+          "coa_code": "4118",
+          "label": "Misc Selling",
+          "row": 58
+        }
+      ]
+    },
+    "FINANCE_ADMIN": {
+      "row_range": [
+        63,
+        71
+      ],
+      "code_prefixes": [
+        "6101",
+        "6102",
+        "6103",
+        "6106",
+        "6107",
+        "6108",
+        "6109",
+        "6111",
+        "6114"
+      ],
+      "line_items": [
+        {
+          "coa_code": "6101",
+          "label": "Accounting / Legal",
+          "row": 63
+        },
+        {
+          "coa_code": "6102",
+          "label": "Bank Fees",
+          "row": 64
+        },
+        {
+          "coa_code": "6103",
+          "label": "Insurance",
+          "row": 65
+        },
+        {
+          "coa_code": "6106",
+          "label": "Salaries - Admin",
+          "row": 66
+        },
+        {
+          "coa_code": "6107",
+          "label": "HR / Recruiting",
+          "row": 67
+        },
+        {
+          "coa_code": "6108",
+          "label": "Office Supplies",
+          "row": 68
+        },
+        {
+          "coa_code": "6109",
+          "label": "Postage",
+          "row": 69
+        },
+        {
+          "coa_code": "6111",
+          "label": "Taxes",
+          "row": 70
+        },
+        {
+          "coa_code": "6114",
+          "label": "Misc Finance",
+          "row": 71
+        }
+      ]
+    },
+    "IT": {
+      "row_range": [
+        75,
+        82
+      ],
+      "code_prefixes": [
+        "7102",
+        "7103",
+        "7104",
+        "7106",
+        "7110",
+        "7111",
+        "7113",
+        "7114"
+      ],
+      "line_items": [
+        {
+          "coa_code": "7102",
+          "label": "Computer/Internet",
+          "row": 75
+        },
+        {
+          "coa_code": "7103",
+          "label": "Microsoft",
+          "row": 76
+        },
+        {
+          "coa_code": "7104",
+          "label": "Phone",
+          "row": 77
+        },
+        {
+          "coa_code": "7106",
+          "label": "IT - Other",
+          "row": 78
+        },
+        {
+          "coa_code": "7110",
+          "label": "Zoom",
+          "row": 79
+        },
+        {
+          "coa_code": "7111",
+          "label": "Zoho",
+          "row": 80
+        },
+        {
+          "coa_code": "7113",
+          "label": "Shopify",
+          "row": 81
+        },
+        {
+          "coa_code": "7114",
+          "label": "Go Daddy",
+          "row": 82
+        }
+      ]
+    },
+    "NON_OPERATING": {
+      "row_range": [
+        86,
+        89
+      ],
+      "code_prefixes": [
+        "9901",
+        "9902",
+        "9903",
+        "9904"
+      ],
+      "line_items": [
+        {
+          "coa_code": "9901",
+          "label": "Interest Expense",
+          "row": 86
+        },
+        {
+          "coa_code": "9902",
+          "label": "Loan Repayments",
+          "row": 87
+        },
+        {
+          "coa_code": "9903",
+          "label": "Tax Payments",
+          "row": 88
+        },
+        {
+          "coa_code": "9904",
+          "label": "Owner Disbursements",
+          "row": 89
+        }
+      ]
+    },
+    "BORROWING": {
+      "row_range": [
+        93,
+        95
+      ],
+      "code_prefixes": [],
+      "special_rows": [
+        {
+          "label": "Borrowing (manual entries only)",
+          "no_code": true
+        }
+      ],
+      "line_items": [
+        {
+          "coa_code": "BORROW",
+          "label": "Borrowing",
+          "row": 93
+        },
+        {
+          "coa_code": "LOAN_REPAY",
+          "label": "Loan Repayments",
+          "row": 94
+        },
+        {
+          "coa_code": "POTENTIAL",
+          "label": "Potential Adjustments",
+          "row": 95
+        }
+      ]
+    }
+  }
+}

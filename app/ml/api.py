@@ -1,0 +1,124 @@
+"""API for the ML layer:  /api/ml/...   (login-protected like every other /api route)
+
+GET  /api/ml/status                     is a model trained, on what data, when
+POST /api/ml/train                      train from ml_data/Zoho_history_*.xlsx (newest) or an uploaded workbook
+POST /api/ml/backtest                   walk-forward test: ML vs the current fixed rules (takes ~1 minute)
+GET  /api/ml/runs/{run_id}/compare      this run forecast with rules vs with ML, plus P10/P50/P90 ending-cash bands
+"""
+from __future__ import annotations
+
+import copy
+import json
+import shutil
+import tempfile
+from pathlib import Path
+from typing import Optional
+
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from pydantic import BaseModel
+
+from app.ml import HISTORY_DIR, ROOT
+
+router = APIRouter(tags=["ml"])
+
+
+@router.get("/status")
+def ml_status():
+    from app.ml.train import latest_history_file, status
+    h = latest_history_file()
+    rules = json.loads((ROOT / "app" / "config" / "forecast_rules.json").read_text(encoding="utf-8"))
+    mlr = rules.get("ml") or {}
+    return {**status(), "enabled_in_rules": bool(mlr.get("enabled")),
+            "use_for": mlr.get("use_for", {"invoices": True, "sales_orders": True, "bills": False}),
+            "history_file_found": h.name if h else None}
+
+
+class MLSettings(BaseModel):
+    enabled: Optional[bool] = None
+    invoices: Optional[bool] = None
+    sales_orders: Optional[bool] = None
+    bills: Optional[bool] = None
+
+
+@router.post("/settings")
+def ml_settings(body: MLSettings):
+    """Switch ML timing on/off (and per document type) by editing the "ml" block of forecast_rules.json.
+    Takes effect on the next forecast run - no restart needed (the engine reads the file on every run)."""
+    path = ROOT / "app" / "config" / "forecast_rules.json"
+    rules = json.loads(path.read_text(encoding="utf-8"))
+    ml = rules.setdefault("ml", {"enabled": False, "use_for": {}})
+    if body.enabled:
+        from app.ml import MODEL_FILE
+        if not MODEL_FILE.exists():
+            raise HTTPException(409, "Train the model first (ML Forecast page > Train model).")
+    use = ml.setdefault("use_for", {"invoices": True, "sales_orders": True, "bills": False})
+    if body.enabled is not None:
+        ml["enabled"] = body.enabled
+    for k in ("invoices", "sales_orders", "bills"):
+        v = getattr(body, k)
+        if v is not None:
+            use[k] = v
+    backup = path.with_name("forecast_rules.json.before_ml_ui")
+    if not backup.exists():
+        shutil.copy2(path, backup)
+    path.write_text(json.dumps(rules, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return {"enabled": ml["enabled"], "use_for": use}
+
+
+@router.post("/train")
+def ml_train(file: Optional[UploadFile] = File(None)):
+    from app.ml.train import train
+    try:
+        if file is not None:
+            HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+            dest = HISTORY_DIR / (Path(file.filename or "Zoho_history_upload.xlsx").name)
+            with open(dest, "wb") as out:
+                shutil.copyfileobj(file.file, out)
+            return train(dest)
+        return train()
+    except FileNotFoundError as e:
+        raise HTTPException(404, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"Training failed: {e}")
+
+
+@router.post("/backtest")
+def ml_backtest(cutoffs: int = 6):
+    from app.ml.backtest import run_backtest
+    from app.ml.train import latest_history_file
+    h = latest_history_file()
+    if h is None:
+        raise HTTPException(404, "No Zoho history workbook in ml_data/.")
+    return run_backtest(h, n_cutoffs=max(2, min(cutoffs, 10)))
+
+
+@router.get("/runs/{run_id}/compare")
+def ml_compare(run_id: str):
+    from app.engine.v10_engine import ROW_ENDING, V10Engine
+    from app.ml.montecarlo import cash_bands
+    from app.output.v10_adapter import forecast_for_run, get_prior_snapshot, get_run_snapshot
+    snap = get_run_snapshot(run_id)
+    if snap is None:
+        raise HTTPException(404, "Run not found")
+    base = forecast_for_run(run_id)
+
+    def build(enabled: bool):
+        rules = copy.deepcopy(base.rules)
+        rules.setdefault("ml", {})["enabled"] = enabled
+        rules["opening_cash"]["manual_adjustments"] = [dict(a) for a in base.manual_adjustments]
+        return V10Engine(snap, rules=rules, prior_snapshot=get_prior_snapshot(run_id)).run()
+
+    rule_f, ml_f = build(False), build(True)
+    warn = [e for e in ml_f.exceptions if e.startswith("ML timing")]
+    if warn:
+        raise HTTPException(409, warn[0])
+    mc = (ml_f.rules.get("ml") or {}).get("montecarlo", {})
+    bands = cash_bands(ml_f, simulations=int(mc.get("simulations", 2000)), seed=int(mc.get("seed", 42)),
+                       party_correlation=float(mc.get("party_correlation", 0.5)))
+    moved = [{"source": r.source, "ref": r.ref, "party": r.party, "amount": r.amount, "week": r.week.isoformat(),
+              "expected": r.ml["p50"].isoformat(), "p10": r.ml["p10"].isoformat(), "p90": r.ml["p90"].isoformat(),
+              "shift_days": r.ml["shift_days"]} for r in ml_f.revenue + ml_f.cogs if r.ml]
+    return {"run_id": run_id, "weeks": bands["weeks"],
+            "ending_cash_rules": rule_f.values[ROW_ENDING], "ending_cash_ml": ml_f.values[ROW_ENDING],
+            "bands": {k: bands[k] for k in ("p10", "p50", "p90")}, "ml_lines": bands["ml_lines"], "note": bands["note"],
+            "lines_retimed": sorted(moved, key=lambda x: -abs(x["amount"] * x["shift_days"]))[:100]}

@@ -1,0 +1,22 @@
+# secrets and company data - never track
+.env
+/data/
+/ml_data/
+/BankStatement/
+/output/
+/project_info/
+/zoho_data_archive/
+/exports/
+/*.xlsx
+/*.pdf
+*.db
+
+# environments and caches
+.venv/
+.venv-mac/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# generated ML outputs
+ml_work/outputs/

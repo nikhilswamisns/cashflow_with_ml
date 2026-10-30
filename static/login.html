@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in — CashFlow Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/ui/login.css?v=3" />
+</head>
+<body class="login-body">
+  <main class="login-card" aria-labelledby="login-title">
+    <section class="login-art" id="login-art" aria-hidden="true">
+      <img src="/brand/background" alt="" class="login-art-img"
+           onerror="document.getElementById('login-art').classList.add('no-img'); this.remove()" />
+      <div class="login-art-text">
+        <p class="login-art-title">Weekly cash flow forecast</p>
+        <p class="login-art-sub">52 weeks ahead, built from live Zoho Books data</p>
+      </div>
+      <!--BG_CREDIT-->
+    </section>
+    <section class="login-panel">
+    <div class="login-brand">
+      <img src="/brand/logo" alt="" class="login-logo" id="login-logo"
+           onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'login-logo login-logo-fallback',textContent:'CF'}))" />
+      <h1 id="login-title" class="login-title">CashFlow Engine</h1>
+      <p class="login-sub">Sign in to continue</p>
+    </div>
+    <!--NO_USERS-->
+    <form id="login-form" class="login-form" autocomplete="on" novalidate>
+      <label class="login-label" for="username">User name</label>
+      <input class="login-input" id="username" name="username" type="text" autocomplete="username" required autofocus />
+      <label class="login-label" for="password">Password</label>
+      <div class="login-pw">
+        <input class="login-input" id="password" name="password" type="password" autocomplete="current-password" required />
+        <button type="button" class="login-eye" id="toggle-pw" aria-label="Show password">Show</button>
+      </div>
+      <p class="login-error" id="login-error" role="alert" hidden></p>
+      <button type="submit" class="login-btn" id="login-btn">Login</button>
+    </form>
+    </section>
+  </main>
+<script>
+(function () {
+  const form = document.getElementById('login-form');
+  const err = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  const pw = document.getElementById('password');
+  document.getElementById('toggle-pw').addEventListener('click', function () {
+    const show = pw.type === 'password';
+    pw.type = show ? 'text' : 'password';
+    this.textContent = show ? 'Hide' : 'Show';
+    this.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+  });
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    err.hidden = true;
+    const username = document.getElementById('username').value.trim();
+    if (!username || !pw.value) { err.textContent = 'Enter your user name and password.'; err.hidden = false; return; }
+    btn.disabled = true; btn.textContent = 'Signing in…';
+    try {
+      const next = new URLSearchParams(location.search).get('next') || '/ui/';
+      const res = await fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+        body: JSON.stringify({ username, password: pw.value, next })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) { location.replace(data.next || '/ui/'); return; }
+      err.textContent = data.detail || 'Login failed.'; err.hidden = false;
+      pw.value = ''; pw.focus();
+    } catch (x) {
+      err.textContent = 'Cannot reach the app. Is it running?'; err.hidden = false;
+    }
+    btn.disabled = false; btn.textContent = 'Login';
+  });
+})();
+</script>
+</body>
+</html>

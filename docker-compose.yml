@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  cashflow-engine:
+    build: .
+    container_name: cashflow_forecast_engine
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./zoho_data_archive:/app/zoho_data_archive
+      - ./.env:/app/.env
+    environment:
+      - PYTHONUNBUFFERED=1

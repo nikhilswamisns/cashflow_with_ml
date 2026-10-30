@@ -1,0 +1,288 @@
+{
+  "_about": "Engine rules that reproduce the v10 canonical (Cash_Flow_Forecast_2026-09-25_10.xlsx). Numeric expense and fixed-amount assumptions are NOT here: they are read from the 'Expense Assumptions' and 'General Info' sheets of app/templates/v10_template.xlsx (single source, editable in Excel).",
+  "window_weeks": 52,
+  "_window_note": "52 weeks from 6 Oct 2026 (was 45).",
+  "servpro_customer_names": [
+    "SERVPRO - Corporate"
+  ],
+  "amazon": {
+    "customer_name_contains": [
+      "Amazon"
+    ],
+    "days_after_ship": 30,
+    "_note": "Client decision 1 Oct 2026 (Ralph): Amazon marketplace customers (Gutster / Staple Popper / Duckbill Amazon USA and Canada) get their own Revenue Detail source ('Amazon Invoice' / 'Amazon Sales Order') and Cash Flow Model row 10 (1100.3 Amazon), like SERVPRO; they are no longer in A/R Collection (row 14). Assumptions & Rules row 7."
+  },
+  "invoices": {
+    "include_statuses": [
+      "sent",
+      "overdue",
+      "partially_paid",
+      "unpaid",
+      "viewed",
+      "draft"
+    ],
+    "amount_basis": "balance (drafts: total)",
+    "receipt_week": "Friday on or after due date; due before week 1 -> week 1"
+  },
+  "sales_orders": {
+    "servpro_include_statuses": [
+      "confirmed",
+      "open",
+      "overdue",
+      "partially_invoiced",
+      "draft"
+    ],
+    "reseller_include_statuses": [
+      "confirmed",
+      "open",
+      "overdue",
+      "partially_invoiced",
+      "draft"
+    ],
+    "amount_basis": "uninvoiced remainder = total - invoiced (draft invoices count as invoiced)",
+    "servpro_days_after_ship": 45,
+    "reseller_days_after_ship": 21,
+    "no_ship_date_rule": "order date + terms days, labelled UNVERIFIED",
+    "receipt_week": "Friday on or after cash-in date; before week 1 -> week 1",
+    "parent_orders": {
+      "_note": "A parent order whose partial fills were raised under their own SO numbers: forecast only the parent's remainder = parent total less the fills (their invoices in Zoho; fallback amounts if the invoices are not in the pull). Applied only while the parent total is at least the fills; once Zoho has reduced the parent itself (e.g. SO-05927 now $61.75), it is forecast as it stands.",
+      "SO-05927": {
+        "fills": {
+          "SO-05859": 45113.65,
+          "SO-05919": 79474.2
+        },
+        "reason": "SERVPRO 333K coverall order re-entered as SO-05927; SO-05859 (724 u) and SO-05919 (1,221 u) are partial fills already invoiced."
+      }
+    }
+  },
+  "purchase_orders": {
+    "include_statuses": [
+      "issued",
+      "open",
+      "draft",
+      "partially_billed"
+    ],
+    "amount_basis": "unbilled amount",
+    "due_date_rule": "delivery date (or PO date when no delivery date, UNVERIFIED) + Zoho supplier Payment Terms days (Net 30/60/90; Due on Receipt = 0), per Assumptions & Rules row 12 'Supplier terms'. Applies whether or not goods are received.",
+    "default_terms_days": 30,
+    "terms_override_days": {},
+    "payment_week": "Friday on or before due date; overdue -> week 1"
+  },
+  "bills": {
+    "include_statuses": [
+      "open",
+      "overdue",
+      "partially_paid",
+      "unpaid"
+    ],
+    "amount_basis": "balance",
+    "payment_week": "Friday on or before due date; overdue -> week 1",
+    "cogs_accounts_keywords": [
+      "cost of goods",
+      "inventory",
+      "inbound freight",
+      "inbound duty",
+      "freight-in",
+      "duty"
+    ],
+    "excluded_vendors": {
+      "Prudent": "3PL Shipping Services (2101) - covered by the row-23 run-rate",
+      "Amex Loan": "Non-COGS finance charge - implicit in the loan / 6109 lines",
+      "Internal Revenue Service": "Tax - scheduled from General Info (rows 34-39), not from bills",
+      "IRS": "Tax - scheduled from General Info (rows 34-39), not from bills",
+      "NJ Division of Taxation": "Tax - scheduled from General Info (rows 34-39), not from bills"
+    },
+    "card_statement_vendors": [
+      "Bank of America Business Card 7747",
+      "CORP Credit Card"
+    ]
+  },
+  "cogs_category_by_vendor": {
+    "C.H. Robinson": "Inbound Freight (3101)",
+    "Zim American": "Inbound Freight (3101)",
+    "US Customs": "Inbound Duty & Gov't Fees (3102)"
+  },
+  "cogs_category_by_account": {
+    "Inbound Freight": "Inbound Freight (3101)",
+    "Inbound Duty": "Inbound Duty & Gov't Fees (3102)"
+  },
+  "opening_cash": {
+    "zoho_cash_account_names": [
+      "BUSINESS FUNDAMENTALS CHK",
+      "PayPal",
+      "Petty Cash",
+      "Stripe Clearing"
+    ],
+    "manual_adjustments": [],
+    "_note": "Opening cash = exactly the named Zoho accounts (no other account type is picked up). Stripe Clearing (Stripe payouts in transit to the bank) added 2026-09-29 on instruction - for client approval; Version 10 row 42 was CHK + PayPal + Petty Cash.",
+    "added_since_v10": [
+      "Stripe Clearing"
+    ],
+    "_manual_adjustments_history": "1 Oct 2026: the $250,000 owner deposit line (entered by Ravleen, as of 2026-09-25) was removed - the deposit is posted in Zoho (9/22: Counter Credit 200,000 + transfer from CRD 4664 50,000) and is inside the CHK balance."
+  },
+  "manual_entries": [
+    {
+      "label": "Loan repayment - one-off",
+      "cfm_row": 95,
+      "week_ending": "2026-10-02",
+      "amount": 73000.0,
+      "source": "Ralph Markham email, 1 Oct 2026 (uncategorised bank items)",
+      "entered_by": "Ravleen",
+      "entered_on": "2026-10-01",
+      "note": "In addition to the regular $13,333 (row 95, last Friday). REMOVE once the payment is categorised in Zoho Books, or it is counted twice (the Zoho cash balance will then already reflect it)."
+    }
+  ],
+  "_manual_entries_note": "One-off amounts entered by hand. Each entry is listed in General Info (MANUAL ENTRIES block, from row 50) and feeds the Cash Flow Model cell for its row and week by formula. week_ending = the Friday of the week (any other date uses the Friday on or before it). Entries dated before week 1 expire automatically (listed, not applied). Allowed Cash Flow Model rows (1 Oct 2026 layout): 9, 11-13, non-card expense rows, 87-90 and 95 (Loan Repayments) - not the detail-driven rows 8/10/14/18-20, the card rows or 94/96.",
+  "credit_cards": {
+    "platinum_name_contains": "Platinum",
+    "corp_name_contains": "7747",
+    "cycle_close_day": 26,
+    "statement_due_day": 20,
+    "cycles_to_schedule": 12,
+    "outbound_freight_card_history": [
+      {
+        "label": "Statement due 7/15/26 (Aug-14 file itemization)",
+        "amount": 1881.17
+      },
+      {
+        "label": "Statement due 8/15/26 (Aug-14 file itemization)",
+        "amount": 3057.43
+      }
+    ],
+    "outbound_freight_card_fallback": {
+      "label": "Cycle Aug 27 - Sep 26 (live Platinum transaction pull)",
+      "amount": 1967.71
+    },
+    "outbound_freight_account_name": "Outbound Freight Costs",
+    "_card_note": "Fix 24: the Zoho pull reads card activity from two cycles before the unpaid one up to the pull day. The outbound-freight card share is then measured live over the last three cycles (the stored history above is used only for an older snapshot), the first statement is the Platinum balance at the close (live balance less charges posted after the close) and those charges go on the next statement."
+  },
+  "duckbill": {
+    "_note": "Client decision 6 Oct 2026: Duckbill repayment (Skagit Valley Innovations, IP rights payable) is forecast on Cash Flow Model row 95 (Loan Repayments), 1st Friday of each month, General Info B32 per month, through Dec 2027. An open Duckbill bill in Zoho is paid on the 1st Friday of the month after its bill date (before week 1 -> week 1) and replaces that month's scheduled payment.",
+    "vendor_contains": "Skagit Valley",
+    "account_contains": "Intellectual Property Rights",
+    "general_info_row": 32,
+    "end_month": "2027-12"
+  },
+  "hold_for_client_review": {
+    "sales_orders": {}
+  },
+  "v10_open_items": [
+    {
+      "owner": "Ralph Markham",
+      "item": "FOUR NEGATIVE WEEKS, 10/02/26 to 10/23/26, troughing at -$165,161.88 in w/e 10/16 when the Platinum statement clears. A bridge is needed for October. This is AFTER crediting the $250,000 owner deposit."
+    },
+    {
+      "owner": "Ayushi / Ralph",
+      "item": "POST THE $250,000 OWNER DEPOSIT IN ZOHO. It is the largest single input in this forecast and the only one with no system-of-record support. Without it every week drops by $250,000 and the trough is -$415,161.88. Delete the General Info line the moment it is posted, or it will be counted twice."
+    },
+    {
+      "owner": "Ayushi",
+      "item": "~1% REALISATION SHORTFALL. Four observations, all exactly 1.0% (SO-05571, SO-05607, INV-007557, SO-05892). If that is a SERVPRO settlement discount, the sales-order lines are ~1% optimistic. Flagged, not adjusted."
+    },
+    {
+      "owner": "Ayushi",
+      "item": "7 SEAS PO-00270 ($81,508) sits in week 1 as a PO-estimate with no bill issued, and is 88% of week-1 COGS. Confirm the restock is still going ahead on that date."
+    },
+    {
+      "owner": "Ayushi / Ralph",
+      "item": "SO-05896 ($27,718.40) has NO shipment date in Zoho; dated from order date + 45 into w/e 10/23 and labelled UNVERIFIED."
+    },
+    {
+      "owner": "Ralph Markham",
+      "item": "EIGHT NON-COGS BILLS, $8,195.14, are only implicit in Expense Assumptions run-rates. Avant Law is the exception — Legal (6102) is $0 in the model, so that bill is covered by nothing."
+    },
+    {
+      "owner": "Ralph Markham",
+      "item": "LOAN REPAYMENT (row 94) and INTEREST (row 67) allocations were corrected to the General Info rules this run. Confirm $13,333 monthly on the last Friday and $250/$1,000/$6,250 interest are right."
+    },
+    {
+      "owner": "Ayushi",
+      "item": "DRAFT-INVOICE ISSUE LAG undecided. The 8 drafts are dated on invoice date + terms, but a draft has not been sent, so its due date is notional. INV-007566 has been in draft since 18 Sep."
+    },
+    {
+      "owner": "N/A",
+      "item": "What the connectors cannot see: bank-feed clearing status per transaction, any card statement not yet posted to Zoho, and the composition of future statements. Everything scheduled here comes from a live Zoho record except the owner deposit."
+    }
+  ],
+  "v10_reference": {
+    "label": "Version 10 (Cash_Flow_Forecast_2026-09-25_10.xlsx)",
+    "trough": -165161.88,
+    "trough_week": "2026-10-16",
+    "negative_weeks": "4 (10/02/26 to 10/23/26)"
+  },
+  "additional_review_items": [
+    {
+      "owner": "Ralph Markham",
+      "item": "COGS AFTER DECEMBER: no purchase orders exist beyond the last open PO, so product purchases stop in the forecast (historical vendor payments ~$236k/month plus ~$30k/month product on card). Client to provide a 2027 purchasing plan."
+    },
+    {
+      "owner": "Ralph Markham",
+      "item": "CARD STATEMENTS vs ACTUAL SPEND: statements are built from the Expense Assumptions run-rates (~$38.3k/month) while actual card spend has run ~$69.8k/month. Confirm which to use."
+    },
+    {
+      "owner": "Ralph Markham",
+      "item": "RESELLER RUN-RATE vs OPEN A/R: row 9 (weekly run-rate) and row 14 A/R Collection (open reseller invoices) are both counted, the same method as the Aug-14 file. Possible overlap up to the open A/R total. Client decision on method."
+    },
+    {
+      "owner": "Ayushi",
+      "item": "SERVPRO TIMING AND 1%: SERVPRO has paid ~11 days after invoice net of 1% (SO-05571, SO-05607, INV-007557, SO-05892), while the model uses ship date + 45 days at full value. Flagged, not adjusted."
+    },
+    {
+      "owner": "Ralph Markham",
+      "item": "LOANS: $13,333/month = $10,000 + $2,083.34 + $1,250 (interest included) while row 67 also carries $1,000 + $250 interest - possible double count. Actual payment days: Jim & Duckbill 4th-8th, Amex ~27th, GMC ~8th-10th. Client to confirm."
+    },
+    {
+      "owner": "Ralph Markham",
+      "item": "EXPENSE RUN-RATES: several lines look ~$15k/month low vs recent actuals (FBA, seller fees, outbound freight, 3PL, travel, tradeshow). Needs a fresh 12-month P&L export."
+    },
+    {
+      "owner": "Ralph Markham",
+      "item": "PAYROLL: Gusto runs have been ~$15.9k vs $18,602 modelled per run. Confirm."
+    },
+    {
+      "owner": "Ayushi",
+      "item": "WEEK 1 ALREADY ELAPSED: the run date is the week-ending Friday, so week-1 receipts and payments may already have happened. Re-run after Friday's banking is posted."
+    },
+    {
+      "owner": "Ayushi",
+      "item": "SMALL ITEMS: credit notes ~$1,016 not applied to invoices."
+    },
+    {
+      "owner": "Ralph Markham",
+      "item": "SO-05927 (SERVPRO 333K coverall order, no ship date): Zoho now holds only its $61.75 remainder - the fills are SO-05859/INV-007591, SO-05919/INV-007593 and draft SO-05943 ($209,092.15). Forecast as it stands at order date + 45 (UNVERIFIED); the parent-order deduction applies only while the parent total still includes the fills. Confirm ship dates with the client."
+    },
+    {
+      "owner": "Ralph Markham",
+      "item": "AMAZON ROW (row 10, new 1 Oct): it carries the open Amazon invoices only, so it falls to $0 once they are collected (about 4 weeks). Future Amazon sales are inside the Other Resellers run-rate (row 9, Sales by Item excluding SERVPRO items). Should Amazon get its own weekly run-rate on row 10, taken out of the Other Resellers figure? Not changed until confirmed."
+    }
+  ],
+  "reseller_run_rate_start_week": 5,
+  "_reseller_run_rate_note": "1 Oct 2026 (client): Other Resellers run-rate collected week + 4, so it first appears in week 5 (was week 4 from 30 Sep).",
+  "hidden_cfm_rows": [
+    54
+  ],
+  "_note_30sep": "30 Sep 2026 (client): April 15 taxes IRS $15,000 / NJ $2,000; reseller run-rate from week 4; rent $6,000/month; Tradeshow (row 53, row 54 since the Amazon row was added 1 Oct) not forecast and hidden.",
+  "resolved_items": [
+    {
+      "owner": "Resolved 1 Oct 2026",
+      "item": "OWNER DEPOSIT $250,000: now posted in Zoho (9/22: Counter Credit 200,000 + transfer from CRD 4664 50,000) and inside the BUSINESS FUNDAMENTALS CHK balance, so the manual opening-cash line has been removed (General Info row 45 = none). The Version 10 open items above that mention the $250,000 deposit are resolved by this; their figures are Version 10's."
+    }
+  ],
+  "ml": {
+    "_note": "Machine-learning timing layer (app/ml). enabled=false -> engine identical to before. Train first: python tools/train_ml.py. Backtest on 5y history: invoices and sales orders beat the fixed rules; bills did not, so bills stay off.",
+    "enabled": false,
+    "use_for": {
+      "invoices": true,
+      "sales_orders": true,
+      "bills": false
+    },
+    "model_path": "data/ml_models/timing_models.joblib",
+    "min_party_history": 3,
+    "max_shift_days": 75,
+    "montecarlo": {
+      "simulations": 2000,
+      "seed": 42,
+      "party_correlation": 0.5
+    }
+  }
+}

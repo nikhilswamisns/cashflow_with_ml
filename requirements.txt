@@ -1,0 +1,11 @@
+# Minimal packages for Excel-only mode (tools/train_ml.py and tools/make_forecast.py).
+# No web server / pydantic / Rust build needed - works on Python 3.11, 3.12 and 3.13.
+#   pip install -r requirements-excel.txt
+pandas>=2.2.0
+openpyxl>=3.1.5
+numpy>=1.24
+scikit-learn>=1.3
+scipy>=1.10
+joblib>=1.3
+requests>=2.31.0
+python-dotenv>=1.0.0
