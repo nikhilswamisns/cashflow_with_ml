@@ -8,3 +8,4 @@ Run scripts from the project root with the Mac venv:  .venv-mac/bin/python ml_wo
 | Step | Script | What it does |
 |---|---|---|
 | 1 | 01_explore_data.py | Profile each dataset, find data problems, draw first charts |
+| 2 | 02_build_monthly_table.py | Clean invoices (drop void, draft, $0), build one row per month by segment |
