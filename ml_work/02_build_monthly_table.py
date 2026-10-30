@@ -59,3 +59,22 @@ print((share * 100).round(1).to_string())
 
 m.to_csv(OUT / "monthly_table.csv")
 print("\nSaved ml_work/outputs/monthly_table.csv")
+
+# --- chart ----------------------------------------------------------------------------------------
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+COLORS = {"SERVPRO": "#1f77b4", "Amazon": "#ff7f0e", "Other": "#2ca02c"}
+fig, ax = plt.subplots(2, 1, figsize=(11, 8))
+bottom = pd.Series(0.0, index=m.index)
+for seg, c in COLORS.items():
+    ax[0].bar(m.index, m[seg], bottom=bottom, width=25, label=seg, color=c)
+    bottom += m[seg]
+ax[0].legend()
+ax[0].set_title("Monthly invoiced revenue by segment ($)")
+(m.groupby(m.index.year)[list(COLORS)].sum() / 1e6).plot.bar(ax=ax[1], rot=0, color=list(COLORS.values()))
+ax[1].set_title("Revenue per year ($M) - 2021 is Q4 only, 2026 is Jan-Sep")
+plt.tight_layout()
+plt.savefig(OUT / "02_monthly.png", dpi=110)
+print("Saved ml_work/outputs/02_monthly.png")
