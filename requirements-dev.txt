@@ -1,0 +1,6 @@
+# For ml_work/ scripts (charts, statsmodels) and the test suite.
+#   pip install -r requirements-dev.txt
+-r requirements.txt
+matplotlib>=3.8
+statsmodels>=0.14
+pytest>=8.0

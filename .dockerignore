@@ -1,0 +1,23 @@
+# secrets and company data - never bake into an image
+.env
+data/
+ml_data/
+BankStatement/
+zoho_data_archive/
+project_info/
+output/
+exports/
+*.xlsx
+*.pdf
+*.db
+
+# environments, caches, tooling
+.venv/
+.venv-mac/
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+.gstack/
+.DS_Store
+ml_work/outputs/
