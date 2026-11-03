@@ -20,3 +20,4 @@ __pycache__/
 
 # generated ML outputs
 ml_work/outputs/
+.gstack/
