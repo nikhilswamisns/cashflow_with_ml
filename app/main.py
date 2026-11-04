@@ -57,7 +57,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(AuthMiddleware)
 
-static_dir = Path(__file__).parent.parent / 'static'
+static_dir = Path(os.environ.get('CASHFLOW_STATIC_DIR') or Path(__file__).parent.parent / 'static')
 
 
 # ------------------------------------------------------------------ login / logout / logo
@@ -138,21 +138,35 @@ def brand_background():
 
 
 # The dashboard page, with the login helper (logo + logout) added. index.html itself is not changed.
+def _dashboard_html(directory: Path, base: str) -> HTMLResponse:
+    html = (directory / 'index.html').read_text(encoding='utf-8')
+    for name, always in (('auth.js', True), ('ml.js', True), ('forecast.js', False)):
+        tag = f'<script src="{base}/{name}?v=1"></script>'
+        if (always or (directory / name).exists()) and name not in html:
+            html = html.replace('</body>', f'{tag}\n</body>') if '</body>' in html else html + tag
+    return HTMLResponse(html)
+
+
 @app.get('/ui/', include_in_schema=False)
 @app.get('/ui/index.html', include_in_schema=False)
 def dashboard():
-    html = (static_dir / 'index.html').read_text(encoding='utf-8')
-    tag = '<script src="/ui/auth.js?v=1"></script>'
-    if 'auth.js' not in html:
-        html = html.replace('</body>', f'{tag}\n</body>') if '</body>' in html else html + tag
-    ml_tag = '<script src="/ui/ml.js?v=1"></script>'
-    if 'ml.js' not in html:
-        html = html.replace('</body>', f'{ml_tag}\n</body>') if '</body>' in html else html + ml_tag
-    return HTMLResponse(html)
+    return _dashboard_html(static_dir, '/ui')
+
+
+# The restyled dashboard (static_v2/) lives beside the original at /ui2/. Same API, same login.
+static2_dir = Path(__file__).parent.parent / 'static_v2'
+
+
+@app.get('/ui2/', include_in_schema=False)
+@app.get('/ui2/index.html', include_in_schema=False)
+def dashboard2():
+    return _dashboard_html(static2_dir, '/ui2')
 
 
 if static_dir.exists():
     app.mount('/ui', StaticFiles(directory=str(static_dir), html=True), name='static')
+if static2_dir.exists():
+    app.mount('/ui2', StaticFiles(directory=str(static2_dir), html=True), name='static2')
 app.include_router(router, prefix='/api')
 from app.ml.api import router as ml_router
 app.include_router(ml_router, prefix='/api/ml')
