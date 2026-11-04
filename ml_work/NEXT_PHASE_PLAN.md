@@ -65,3 +65,23 @@ Open client questions: the cost-to-revenue ratio; the about 660 no-payee checkin
 Also open: $9.0M (log-linear) vs $7.1M (dollar-line) next 12 months; XGBoost was discussed as a possible step 5c (expected to lose, same as the other tree models).
 
 Run the new look: `CASHFLOW_DISABLE_AUTH=1 python -m uvicorn app.main:app --port 8011`, then open `/ui2/`. An older server on port 8010 has no forecast endpoint.
+
+## Update 4 Nov 2026 (later): step 1 done, future work
+
+Step 1 is done: the Expected Receipts panel (see `HANDOFF.md`). Labels were renamed so each chart says which model it uses: "Paid on rule dates" vs "Paid when customers actually pay (ML timing)" on the trajectory, "Expected new revenue (ML)" on the receipts panel.
+
+Result in one line: known $3.15M plus expected new revenue $6.30M gives $9.45M of receipts over 52 weeks (range $8.1M to $15.8M). The rules alone had no growth after the known documents (flat $43k a week), which is the main thing the ML work adds.
+
+Future work, in order of value:
+1. **Cost side (step 2).** Cost-to-revenue ratio from the 5-year history, known bills and POs first. Needs client input. Without it, do not add revenue to the cash balance.
+2. **Third line on the Cash Position Trajectory (step 3).** Revenue forecast plus matching costs. Write the golden test first so weeks 1 to 13 cannot change. Until then, consider shading weeks 30 to 52 as "flat run-rate only" and hiding the zero-width band.
+3. **Conservative case.** Add the dollar-line ($7.1M next 12 months) as a second dashed line on the receipts chart so the manager sees the disagreement between trend models.
+4. **Payment lag.** Replace "same month" with a lag (SERVPRO about 11 days is an open client question).
+5. **Verify the timing model.** Re-run its Backtest and show the result next to the trajectory before calling the ML line the better one.
+6. **Remove the overlap question.** Client decision on the flat run-rate vs open A/R double count (note in `forecast_rules.json`).
+7. **Data refresh.** Page reads CSV snapshots. Phase F (warehouse and scheduled refresh) or re-run scripts 02, 05, 05b on a newer export.
+8. **Hardcoded text** in `forecast.js` and `api.py` (model name, "Oct 2026 to Sep 2027", the "4 in 5" legend) should come from the data.
+9. **Docs and tests.** `REPORT.md`, `ML_APPROACH.md`, `ML_VISUAL_SUMMARY.md` and the PDFs do not yet cover step 5b, the Revenue Forecast page or Expected Receipts. Add an HTTP-level test for `/receipts-outlook`. Check phone width.
+10. **Optional:** XGBoost (step 5c, expected to lose), known data as model inputs (step 4 of the 4 Nov list).
+
+Open client questions (unchanged): cost-to-revenue ratio; the about 660 no-payee checking journal entries (about $1.7M); does SERVPRO pay about 11 days after invoice; known events the data cannot see.

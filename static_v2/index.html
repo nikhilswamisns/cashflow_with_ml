@@ -150,7 +150,7 @@
       <div class="panel-header">
         <div class="panel-title-group">
           <span class="panel-title">Cash Position Trajectory (Rolling Forecast)</span>
-          <span class="panel-desc">Dynamic weekly ending cash balance with zero-cash threshold boundary</span>
+          <span class="panel-desc">Weekly ending cash, costs included. Two lines: same documents, different payment timing</span>
         </div>
         <div class="chart-controls">
           <span class="pill active" onclick="setChartTimeframe('52')">52 Weeks</span>
@@ -162,11 +162,43 @@
         <canvas id="chart-cash-trajectory"></canvas>
       </div>
       <div id="traj-legend" style="display:none;flex-wrap:wrap;gap:20px;font-size:12.5px;color:var(--text-secondary);margin-top:12px">
-        <span><i style="display:inline-block;width:22px;height:3px;background:#5b8def;vertical-align:middle;margin-right:8px"></i>Rule-based (engine)</span>
-        <span><i style="display:inline-block;width:22px;height:3px;background:repeating-linear-gradient(90deg,#f0a43a 0 7px,transparent 7px 11px);vertical-align:middle;margin-right:8px"></i>ML-timed payments</span>
-        <span><i style="display:inline-block;width:22px;height:12px;background:rgba(240,164,58,0.3);border-radius:3px;vertical-align:middle;margin-right:8px"></i>ML likely range (p10 to p90)</span>
+        <span><i style="display:inline-block;width:22px;height:3px;background:#5b8def;vertical-align:middle;margin-right:8px"></i>Paid on rule dates</span>
+        <span><i style="display:inline-block;width:22px;height:3px;background:repeating-linear-gradient(90deg,#f0a43a 0 7px,transparent 7px 11px);vertical-align:middle;margin-right:8px"></i>Paid when customers actually pay (ML timing)</span>
+        <span><i style="display:inline-block;width:22px;height:12px;background:rgba(240,164,58,0.3);border-radius:3px;vertical-align:middle;margin-right:8px"></i>Likely range for the ML timing (p10 to p90)</span>
       </div>
       <div id="traj-ml-note" style="font-size:12.5px;color:var(--text-muted);line-height:1.5;margin-top:8px;max-width:90ch"></div>
+    </div>
+
+    <div class="chart-panel full-width">
+      <div class="panel-header">
+        <div class="panel-title-group">
+          <span class="panel-title">Expected Receipts (cash in only)
+            <span class="info-tip" tabindex="0" aria-label="About this chart" data-tip="KNOWN comes from the rule engine: open invoices and orders, plus a flat reseller run-rate. The payment-timing ML is not applied here. EXPECTED NEW REVENUE is the monthly revenue trend model, a different model from the payment-timing one on the chart above. It adds only what is not already booked, so nothing is counted twice. Receipts only, no costs. Revenue is counted as cash in the same month (no payment lag). Months after Sep 2027 extend the same trend.">i</span></span>
+          <span class="panel-desc">Booked invoices and orders first, then new revenue the ML trend model expects. No costs</span>
+        </div>
+        <div class="chart-controls">
+          <span class="pill active" onclick="setChartTimeframe('52')">52 Weeks</span>
+          <span class="pill" onclick="setChartTimeframe('26')">26 Weeks</span>
+          <span class="pill" onclick="setChartTimeframe('13')">13 Weeks</span>
+          <span style="width:1px;height:18px;background:var(--border,rgba(255,255,255,0.12));margin:0 6px"></span>
+          <span class="pill active" id="rc-mode-cum" onclick="setReceiptsMode('cum')">Running total</span>
+          <span class="pill" id="rc-mode-wk" onclick="setReceiptsMode('wk')">Per week</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px">
+        <div class="stat-card"><div class="stat-header"><span class="stat-label">Known</span><span class="badge verified">Booked + run-rate</span></div><div class="stat-value" id="rc-known">-</div><div class="stat-sub" id="rc-known-sub"></div></div>
+        <div class="stat-card"><div class="stat-header"><span class="stat-label">Expected new revenue (ML)</span><span class="badge accent">Fills the gap</span></div><div class="stat-value" id="rc-ml">-</div><div class="stat-sub" id="rc-ml-sub"></div></div>
+        <div class="stat-card"><div class="stat-header"><span class="stat-label" id="rc-total-label">Total receipts, 52 weeks</span><span class="badge accent">Expected</span></div><div class="stat-value" id="rc-total">-</div><div class="stat-sub" id="rc-total-sub"></div></div>
+      </div>
+      <div id="rc-checks" class="rc-chips">
+        <button type="button" class="rc-chip on" data-layer="documents" aria-pressed="true"><i class="rc-sw" style="background:#a9c3f5"></i><span class="rc-name">Booked</span><span class="rc-val" id="rc-v-documents"></span></button>
+        <button type="button" class="rc-chip on" data-layer="known" aria-pressed="true"><i class="rc-sw" style="background:#5b8def"></i><span class="rc-name">Known</span><span class="rc-val" id="rc-v-known"></span></button>
+        <button type="button" class="rc-chip on" data-layer="forecast" aria-pressed="true"><i class="rc-sw rc-dash"></i><span class="rc-name">Known + expected new</span><span class="rc-val" id="rc-v-forecast"></span></button>
+        <button type="button" class="rc-chip on" data-layer="range" aria-pressed="true"><i class="rc-sw rc-band"></i><span class="rc-name">Likely range</span><span class="rc-val" id="rc-v-range"></span></button>
+      </div>
+      <div class="chart-wrapper">
+        <canvas id="chart-receipts-outlook"></canvas>
+      </div>
     </div>
 
     <div class="chart-panel full-width">

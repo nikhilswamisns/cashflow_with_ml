@@ -20,6 +20,20 @@ from app.ml import MODEL_FILE
 from app.ml.history import norm
 
 
+_BUNDLES: dict = {}
+
+
+def _load_bundle(p) -> dict:
+    """joblib.load takes about 0.6 s and the engine builds a new MLTiming on every run. The bundle is read-only, so
+    keep one copy per file version: retraining rewrites the file (new mtime/size) and is picked up on the next call."""
+    st = p.stat()
+    key = (str(p), st.st_mtime_ns, st.st_size)
+    if key not in _BUNDLES:
+        _BUNDLES.clear()                    # only the newest version is kept
+        _BUNDLES[key] = joblib.load(p)
+    return _BUNDLES[key]
+
+
 class MLTiming:
     def __init__(self, bundle: dict, cfg: dict):
         self.models = bundle["models"]
@@ -40,7 +54,7 @@ class MLTiming:
             p = ROOT / p
         if not p.exists():
             raise FileNotFoundError(f"ML model file not found: {p}. Train it first (python tools/train_ml.py).")
-        return cls(joblib.load(p), cfg)
+        return cls(_load_bundle(p), cfg)
 
     # ------------------------------------------------------------------
     def _predict(self, kind: str, party: str, base: date, known: Optional[date], amount: float,

@@ -19,8 +19,10 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from app.ml import HISTORY_DIR, ROOT
+from app.ml.result_cache import ResultCache
 
 router = APIRouter(tags=["ml"])
+_compare_cache = ResultCache(size=8)
 
 
 @router.get("/status")
@@ -95,12 +97,22 @@ def ml_backtest(cutoffs: int = 6):
 
 @router.get("/runs/{run_id}/compare")
 def ml_compare(run_id: str):
-    from app.engine.v10_engine import ROW_ENDING, V10Engine
-    from app.ml.montecarlo import cash_bands
-    from app.output.v10_adapter import forecast_for_run, get_prior_snapshot, get_run_snapshot
+    """Rules vs ML-timed forecast. About 2 s to compute, so the result is cached by run, its data and the model/rules files."""
+    from app.ml.result_cache import fingerprint
+    from app.output.v10_adapter import get_prior_snapshot, get_run_snapshot
+    from app import db
     snap = get_run_snapshot(run_id)
     if snap is None:
         raise HTTPException(404, "Run not found")
+    run = db.get_run(run_id) or {}
+    key = (run_id, fingerprint(snap, get_prior_snapshot(run_id), run.get("opening_cash_amount"), run.get("opening_cash_date")))
+    return _compare_cache.get_or_compute(key, lambda: _compute_compare(run_id, snap))
+
+
+def _compute_compare(run_id: str, snap: dict):
+    from app.engine.v10_engine import ROW_ENDING, V10Engine
+    from app.ml.montecarlo import cash_bands
+    from app.output.v10_adapter import forecast_for_run, get_prior_snapshot
     base = forecast_for_run(run_id)
 
     def build(enabled: bool):
@@ -123,6 +135,19 @@ def ml_compare(run_id: str):
             "ending_cash_rules": rule_f.values[ROW_ENDING], "ending_cash_ml": ml_f.values[ROW_ENDING],
             "bands": {k: bands[k] for k in ("p10", "p50", "p90")}, "ml_lines": bands["ml_lines"], "note": bands["note"],
             "lines_retimed": sorted(moved, key=lambda x: -abs(x["amount"] * x["shift_days"]))[:100]}
+
+
+@router.get("/runs/{run_id}/receipts-outlook")
+def receipts_outlook(run_id: str):
+    """Weekly receipts in layers (booked documents, flat run-rate, ML revenue forecast addition). Read-only."""
+    from app.ml.receipts_outlook import FORECAST_CSV, build_outlook
+    from app.output.v10_adapter import forecast_for_run
+    if not FORECAST_CSV.exists():
+        raise HTTPException(404, "Forecast files not found. Run ml_work/05_calibrate_range.py first.")
+    f = forecast_for_run(run_id)
+    if f is None:
+        raise HTTPException(404, "Run not found")
+    return {"run_id": run_id, **build_outlook(f)}
 
 
 @router.get("/revenue-forecast")

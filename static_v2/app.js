@@ -146,7 +146,7 @@ function renderKPIs(kpis) {
 
 function setChartTimeframe(weeksStr) {
   activeTimeframe = parseInt(weeksStr, 10);
-  document.querySelectorAll(".chart-controls .pill").forEach((el) => {
+  document.querySelectorAll('.chart-controls .pill[onclick^="setChartTimeframe"]').forEach((el) => {
     el.classList.toggle("active", el.textContent.includes(weeksStr));
   });
   if (currentAnalytics) {
@@ -155,7 +155,7 @@ function setChartTimeframe(weeksStr) {
 }
 
 // ML timing line + p10-p90 band on the Cash Position Trajectory, next to the rule-based line.
-// Source: GET /api/ml/runs/{run}/compare (about 3 s, so cached per run and drawn after the main chart).
+// Source: GET /api/ml/runs/{run}/compare (about 3.5 s the first time, then cached on the server; also cached per run in the page and drawn after the main chart).
 const mlTrajCache = {};
 
 async function overlayMlTrajectory(chart, runId, limit) {
@@ -180,17 +180,101 @@ async function overlayMlTrajectory(chart, runId, limit) {
   const ML = "#f0a43a";
   const cut = (a) => a.slice(0, limit);
   chart.data.datasets.push(
-    { label: "ML low (p10)", data: cut(c.bands.p10), borderColor: "rgba(240,164,58,0.35)", borderWidth: 1, pointRadius: 0, fill: false, tension: 0.25, hideTip: true },
-    { label: "ML high (p90)", data: cut(c.bands.p90), borderColor: "rgba(240,164,58,0.35)", borderWidth: 1, pointRadius: 0, fill: "-1", backgroundColor: "rgba(240,164,58,0.14)", tension: 0.25, hideTip: true },
-    { label: "ML-timed", data: cut(c.ending_cash_ml), borderColor: ML, borderWidth: 2.5, borderDash: [7, 5], pointRadius: 0, pointHoverRadius: 5, fill: false, tension: 0.25 },
+    { label: "Timing range low (p10)", data: cut(c.bands.p10), borderColor: "rgba(240,164,58,0.35)", borderWidth: 1, pointRadius: 0, fill: false, tension: 0.25, hideTip: true },
+    { label: "Timing range high (p90)", data: cut(c.bands.p90), borderColor: "rgba(240,164,58,0.35)", borderWidth: 1, pointRadius: 0, fill: "-1", backgroundColor: "rgba(240,164,58,0.14)", tension: 0.25, hideTip: true },
+    { label: "Paid when customers actually pay (ML timing)", data: cut(c.ending_cash_ml), borderColor: ML, borderWidth: 2.5, borderDash: [7, 5], pointRadius: 0, pointHoverRadius: 5, fill: false, tension: 0.25 },
   );
   chart.update();
   if (legend) legend.style.display = "flex";
   const diff = c.ending_cash_rules.map((v, i) => Math.abs(v - c.ending_cash_ml[i]));
   const last = diff.reduce((m, d, i) => (d > 1 ? i + 1 : m), 0);
   note.textContent = last
-    ? `The two lines differ through week ${last}. ML only changes when known invoices, orders and bills are paid, so later weeks match until the revenue forecast is connected.`
+    ? `Same documents, different payment dates. The lines differ through week ${last}. After that almost no booked documents are left, so both lines are a flat run-rate assumption, not a forecast.`
     : "The two lines are identical for this run.";
+}
+
+// Expected receipts: known (rules) + expected new revenue (ML revenue trend model), from GET /api/ml/runs/{run}/receipts-outlook.
+const rcCache = {};
+let chartReceipts = null;
+let rcMode = "cum"; // "cum" running total, "wk" per week
+
+function setReceiptsMode(m) {
+  rcMode = m;
+  document.getElementById("rc-mode-cum").classList.toggle("active", m === "cum");
+  document.getElementById("rc-mode-wk").classList.toggle("active", m === "wk");
+  renderReceiptsOutlook(currentRunId, activeTimeframe);
+}
+
+const rcOn = { documents: true, known: true, forecast: true, range: true };
+document.addEventListener("click", (e) => {
+  const chip = e.target.closest && e.target.closest("#rc-checks .rc-chip");
+  if (!chip) return;
+  rcOn[chip.dataset.layer] = !rcOn[chip.dataset.layer];
+  chip.classList.toggle("on", rcOn[chip.dataset.layer]);
+  chip.setAttribute("aria-pressed", String(rcOn[chip.dataset.layer]));
+  renderReceiptsOutlook(currentRunId, activeTimeframe);
+});
+
+async function renderReceiptsOutlook(runId, limit) {
+  const canvas = document.getElementById("chart-receipts-outlook");
+  if (!canvas || !runId) return;
+  let c = rcCache[runId];
+  if (c === undefined) {
+    try {
+      const r = await fetch(`${API}/ml/runs/${runId}/receipts-outlook`);
+      c = r.ok ? await r.json() : null;
+    } catch (_) { c = null; }
+    rcCache[runId] = c;
+  }
+  if (!c) return;
+  const on = (k) => rcOn[k];
+  const n = Math.min(limit || 52, c.weeks.length);
+  const add = (a) => a.slice(0, n);
+  const run = (a) => { let t = 0; return a.slice(0, n).map((v) => (t += v)); };
+  const shape = rcMode === "cum" ? run : add;
+  const docs = c.documents;
+  const known = c.documents.map((d, i) => d + c.run_rate[i]);
+  const withMl = known.map((k, i) => k + c.forecast_added[i]);
+  const low = known.map((k, i) => k + c.forecast_added_low[i]);
+  const high = known.map((k, i) => k + c.forecast_added_high[i]);
+  const line = (label, data, color, extra = {}) => ({ type: "line", label, data: shape(data), borderColor: color, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, tension: rcMode === "cum" ? 0.15 : 0.25, fill: false, ...extra });
+  const datasets = [
+    line("Booked invoices and orders", docs, "#a9c3f5", { hidden: !on("documents"), borderWidth: 2 }),
+    line("Known (booked + run-rate)", known, "#5b8def", { hidden: !on("known") }),
+    line("Known + expected new revenue", withMl, "#f0a43a", { hidden: !on("forecast"), borderDash: [7, 5] }),
+    line("Range low", low, "rgba(240,164,58,0.4)", { hidden: !on("range"), borderWidth: 1, hideTip: true }),
+    line("Range high", high, "rgba(240,164,58,0.4)", { hidden: !on("range"), borderWidth: 1, hideTip: true, fill: "-1", backgroundColor: "rgba(240,164,58,0.14)" }),
+  ];
+  if (chartReceipts) { try { chartReceipts.destroy(); } catch (_) {} chartReceipts = null; }
+  chartReceipts = new Chart(canvas.getContext("2d"), {
+    data: { labels: c.weeks.slice(0, n).map((w) => w.slice(5)), datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: { legend: { display: false }, tooltip: { filter: (it) => !it.dataset.hideTip,
+        callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${fmtMoney(ctx.parsed.y)}` } } },
+      scales: {
+        x: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 10 }, maxTicksLimit: 12, maxRotation: 0, autoSkip: true } },
+        y: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 10 }, callback: (v) => fmtMoney(v) } },
+      },
+    },
+  });
+  const sum = (a) => a.slice(0, n).reduce((x, y) => x + y, 0);
+  const m = (v) => "$" + (v / 1e6).toFixed(2) + "M";
+  const m1 = (v) => "$" + (v / 1e6).toFixed(1) + "M";
+  const kTot = sum(known), mlTot = sum(c.forecast_added), docTot = sum(docs);
+  const set = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+  set("rc-known", m(kTot));
+  set("rc-known-sub", `${m(docTot)} booked, ${m(kTot - docTot)} run-rate`);
+  set("rc-ml", m(mlTot));
+  set("rc-ml-sub", `${Math.round((mlTot / (kTot + mlTot)) * 100)}% of the total`);
+  set("rc-total", m(kTot + mlTot));
+  set("rc-total-label", `Total receipts, ${n} weeks`);
+  set("rc-total-sub", `range ${m(kTot + sum(c.forecast_added_low))} to ${m(kTot + sum(c.forecast_added_high))}`);
+  set("rc-v-documents", m(docTot));
+  set("rc-v-known", m(kTot));
+  set("rc-v-forecast", m(kTot + mlTot));
+  set("rc-v-range", `${m1(kTot + sum(c.forecast_added_low))} to ${m1(kTot + sum(c.forecast_added_high))}`);
 }
 
 function renderCharts(analytics, limit = 52) {
@@ -225,7 +309,7 @@ function renderCharts(analytics, limit = 52) {
         labels: labels,
         datasets: [
           {
-            label: "Rule-based",
+            label: "Paid on rule dates",
             data: trajectory,
             borderColor: "#5b8def",
             backgroundColor: grad,
@@ -267,6 +351,7 @@ function renderCharts(analytics, limit = 52) {
       },
     });
     overlayMlTrajectory(chartTrajectory, currentRunId, limit);
+    renderReceiptsOutlook(currentRunId, limit);
   }
 
   let arData = (analytics.ar_ap && Array.isArray(analytics.ar_ap.ar_trajectory) && analytics.ar_ap.ar_trajectory.length > 0)
