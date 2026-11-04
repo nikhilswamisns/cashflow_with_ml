@@ -161,6 +161,12 @@
       <div class="chart-wrapper">
         <canvas id="chart-cash-trajectory"></canvas>
       </div>
+      <div id="traj-legend" style="display:none;flex-wrap:wrap;gap:20px;font-size:12.5px;color:var(--text-secondary);margin-top:12px">
+        <span><i style="display:inline-block;width:22px;height:3px;background:#5b8def;vertical-align:middle;margin-right:8px"></i>Rule-based (engine)</span>
+        <span><i style="display:inline-block;width:22px;height:3px;background:repeating-linear-gradient(90deg,#f0a43a 0 7px,transparent 7px 11px);vertical-align:middle;margin-right:8px"></i>ML-timed payments</span>
+        <span><i style="display:inline-block;width:22px;height:12px;background:rgba(240,164,58,0.3);border-radius:3px;vertical-align:middle;margin-right:8px"></i>ML likely range (p10 to p90)</span>
+      </div>
+      <div id="traj-ml-note" style="font-size:12.5px;color:var(--text-muted);line-height:1.5;margin-top:8px;max-width:90ch"></div>
     </div>
 
     <div class="chart-panel full-width">

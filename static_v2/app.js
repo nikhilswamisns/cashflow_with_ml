@@ -154,6 +154,45 @@ function setChartTimeframe(weeksStr) {
   }
 }
 
+// ML timing line + p10-p90 band on the Cash Position Trajectory, next to the rule-based line.
+// Source: GET /api/ml/runs/{run}/compare (about 3 s, so cached per run and drawn after the main chart).
+const mlTrajCache = {};
+
+async function overlayMlTrajectory(chart, runId, limit) {
+  const note = document.getElementById("traj-ml-note");
+  const legend = document.getElementById("traj-legend");
+  if (!chart || !runId || !note) return;
+  let c = mlTrajCache[runId];
+  if (c === undefined) {
+    note.textContent = "Loading the ML timing line...";
+    try {
+      const r = await fetch(`${API}/ml/runs/${runId}/compare`);
+      c = r.ok ? await r.json() : null;
+    } catch (_) { c = null; }
+    mlTrajCache[runId] = c;
+  }
+  if (chartTrajectory !== chart) return; // chart was rebuilt while the call was running
+  if (!c) {
+    if (legend) legend.style.display = "none";
+    note.textContent = "ML timing line not available (train the model on the ML Forecast page).";
+    return;
+  }
+  const ML = "#f0a43a";
+  const cut = (a) => a.slice(0, limit);
+  chart.data.datasets.push(
+    { label: "ML low (p10)", data: cut(c.bands.p10), borderColor: "rgba(240,164,58,0.35)", borderWidth: 1, pointRadius: 0, fill: false, tension: 0.25, hideTip: true },
+    { label: "ML high (p90)", data: cut(c.bands.p90), borderColor: "rgba(240,164,58,0.35)", borderWidth: 1, pointRadius: 0, fill: "-1", backgroundColor: "rgba(240,164,58,0.14)", tension: 0.25, hideTip: true },
+    { label: "ML-timed", data: cut(c.ending_cash_ml), borderColor: ML, borderWidth: 2.5, borderDash: [7, 5], pointRadius: 0, pointHoverRadius: 5, fill: false, tension: 0.25 },
+  );
+  chart.update();
+  if (legend) legend.style.display = "flex";
+  const diff = c.ending_cash_rules.map((v, i) => Math.abs(v - c.ending_cash_ml[i]));
+  const last = diff.reduce((m, d, i) => (d > 1 ? i + 1 : m), 0);
+  note.textContent = last
+    ? `The two lines differ through week ${last}. ML only changes when known invoices, orders and bills are paid, so later weeks match until the revenue forecast is connected.`
+    : "The two lines are identical for this run.";
+}
+
 function renderCharts(analytics, limit = 52) {
   if (!analytics || !window.Chart) return;
 
@@ -186,7 +225,7 @@ function renderCharts(analytics, limit = 52) {
         labels: labels,
         datasets: [
           {
-            label: "Ending Cash Position",
+            label: "Rule-based",
             data: trajectory,
             borderColor: "#5b8def",
             backgroundColor: grad,
@@ -205,8 +244,9 @@ function renderCharts(analytics, limit = 52) {
         plugins: {
           legend: { display: false },
           tooltip: {
+            filter: (item) => !item.dataset.hideTip,
             callbacks: {
-              label: (ctx) => ` Cash: ${fmtMoney(ctx.parsed.y)}`,
+              label: (ctx) => ` ${ctx.dataset.label}: ${fmtMoney(ctx.parsed.y)}`,
             },
           },
         },
@@ -226,6 +266,7 @@ function renderCharts(analytics, limit = 52) {
         },
       },
     });
+    overlayMlTrajectory(chartTrajectory, currentRunId, limit);
   }
 
   let arData = (analytics.ar_ap && Array.isArray(analytics.ar_ap.ar_trajectory) && analytics.ar_ap.ar_trajectory.length > 0)

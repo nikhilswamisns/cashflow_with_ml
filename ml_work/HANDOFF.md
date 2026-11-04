@@ -23,7 +23,8 @@ Headline: **$9.02M next 12 months** (+92% vs last 12 months), range $7.74M to $1
 - `static_v2/` is the restyled dashboard (dark, one accent, grouped sidebar). **`static/` is still the original.** Swap by copying `static_v2/` over `static/` only when agreed.
 - `static_v2/forecast.js`: the Revenue Forecast page (history, dashed forecast, range band, 3 summary cards). Injected by `app/main.py`.
 - `static_v2/ml.js`: payment-timing page; train/backtest/compare are in a collapsed Admin block.
-- `CASHFLOW_STATIC_DIR` (env, `app/main.py`) serves another static folder. Run the new look: `CASHFLOW_DISABLE_AUTH=1 CASHFLOW_STATIC_DIR=$PWD/static_v2 .venv-mac/bin/python -m uvicorn app.main:app --port 8011`. `CASHFLOW_DISABLE_AUTH` is local-only; never set it on a hosted copy.
+- The restyled dashboard is served at `/ui2/` (the original stays at `/ui/`). Run: `CASHFLOW_DISABLE_AUTH=1 python -m uvicorn app.main:app --port 8011`, then open `/ui2/`. `CASHFLOW_DISABLE_AUTH` is local-only; never set it on a hosted copy.
+- The Cash Position Trajectory on `/ui2/` also shows the ML-timed line and p10 to p90 band next to the rule-based line (`overlayMlTrajectory` in `static_v2/app.js`). See the 4 Nov update in `NEXT_PHASE_PLAN.md` for what is and is not connected.
 
 ## Known gaps (be honest about these)
 - The revenue forecast is **not connected to the 52-week cash forecast**. Connecting it (weeks 14 to 52, behind the ML switch, with a golden test first) is Phase E in `NEXT_PHASE_PLAN.md`.

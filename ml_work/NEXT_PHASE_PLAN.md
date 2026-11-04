@@ -46,3 +46,22 @@ Docker image would crash (requirements missing web packages) and would copy real
 ## Working rules (from the user)
 
 Ask before every commit and never push. Run scripts and open the charts. Go step by step. Say plainly when a result is weak. Keep ML work inside `ml_work/`; do not change the engine without a golden test.
+
+## Update 4 Nov 2026: combine rule-based and ML on the cash chart
+
+Done: `/ui2/` Cash Position Trajectory now shows the rule-based line (blue), the ML-timed line (orange dashed) and the ML p10 to p90 band, from `GET /api/ml/runs/{run}/compare` (about 3.5 s, cached per run). Code: `overlayMlTrajectory` in `static_v2/app.js`, legend in `static_v2/index.html`. `/ui/` is untouched.
+
+What the chart is: a forecast from today's opening cash, built only from rules. Weeks 1 to 13 rest on real open invoices, orders, POs and bills. After about week 29 the only inflow is the flat reseller run-rate (about $42k a week); SERVPRO inflow is about zero because no future orders exist yet. The ML timing line only moves known documents, so the two lines match after week 29 (30 Oct run). The revenue forecast from `ml_work/` (the $9.02M) is **not** in the cash chart yet. The revenue model was trained on monthly invoice revenue totals only, not on costs, bills or timing.
+
+Idea to build: **known first, ML fills the gap.** Expected receipts per week = known documents (rules, retimed by the timing model) + forecast revenue not yet booked (monthly forecast minus what is already booked in that month, so nothing is counted twice). Known backlog only reaches a few weeks out (orders ship about 1 day after they are placed), so the revenue model matters most after week 13.
+
+Steps, in order:
+1. Receipts chart, weeks 1 to 52: rules only vs rules plus the revenue forecast (receipts only, no cost problem).
+2. Costs for later weeks: known bills and POs, then a cost-to-revenue ratio from the 5-year history. Needs client input. Do not add revenue without matching costs, or cash is overstated.
+3. Third line on the Cash Position Trajectory. Write a golden test first so weeks 1 to 13 cannot change.
+4. Optional: use known data (open order amounts, customer payment lags) as model inputs.
+
+Open client questions: the cost-to-revenue ratio; the about 660 no-payee checking-account journal entries (about $1.7M); does SERVPRO pay about 11 days after invoice; known events the data cannot see.
+Also open: $9.0M (log-linear) vs $7.1M (dollar-line) next 12 months; XGBoost was discussed as a possible step 5c (expected to lose, same as the other tree models).
+
+Run the new look: `CASHFLOW_DISABLE_AUTH=1 python -m uvicorn app.main:app --port 8011`, then open `/ui2/`. An older server on port 8010 has no forecast endpoint.
