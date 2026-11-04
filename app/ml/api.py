@@ -3,6 +3,7 @@
 GET  /api/ml/status                     is a model trained, on what data, when
 POST /api/ml/train                      train from ml_data/Zoho_history_*.xlsx (newest) or an uploaded workbook
 POST /api/ml/backtest                   walk-forward test: ML vs the current fixed rules (takes ~1 minute)
+GET  /api/ml/revenue-forecast           monthly revenue history + 12-month forecast with range (from ml_work/outputs)
 GET  /api/ml/runs/{run_id}/compare      this run forecast with rules vs with ML, plus P10/P50/P90 ending-cash bands
 """
 from __future__ import annotations
@@ -122,3 +123,36 @@ def ml_compare(run_id: str):
             "ending_cash_rules": rule_f.values[ROW_ENDING], "ending_cash_ml": ml_f.values[ROW_ENDING],
             "bands": {k: bands[k] for k in ("p10", "p50", "p90")}, "ml_lines": bands["ml_lines"], "note": bands["note"],
             "lines_retimed": sorted(moved, key=lambda x: -abs(x["amount"] * x["shift_days"]))[:100]}
+
+
+@router.get("/revenue-forecast")
+def revenue_forecast():
+    """Read-only: the ML work's monthly revenue history and 12-month forecast (ml_work/outputs/*.csv)."""
+    import csv
+    out = ROOT / "ml_work" / "outputs"
+    files = {"history": out / "monthly_table.csv", "forecast": out / "05_forecast_new_range.csv",
+             "backtest": out / "05_backtest_new_range.csv"}
+    if not files["history"].exists() or not files["forecast"].exists():
+        raise HTTPException(404, "Forecast files not found. Run ml_work/02_build_monthly_table.py and 05_calibrate_range.py first.")
+
+    def rows(f):
+        with open(f, newline="", encoding="utf-8") as fh:
+            return list(csv.DictReader(fh))
+
+    history = [{"date": r["date"][:7], "revenue": round(float(r["Total"]))} for r in rows(files["history"])]
+    fc = rows(files["forecast"])
+    forecast = [{"date": r[""][:7], "forecast": float(r["trend_forecast"]), "low": float(r["low"]), "high": float(r["high"])} for r in fc]
+    last12 = sum(h["revenue"] for h in history[-12:])
+    next12 = sum(f["forecast"] for f in forecast)
+    accuracy = None
+    if files["backtest"].exists():
+        bt = rows(files["backtest"])
+        misses = [abs(float(r["miss_pct"])) for r in bt]
+        accuracy = {"months": len(bt), "avg_miss_pct": round(sum(misses) / len(misses), 1),
+                    "inside_range": sum(1 for r in bt if r["inside_range"] == "True")}
+    return {"history": history, "forecast": forecast,
+            "summary": {"last12": round(last12), "next12": round(next12),
+                        "growth_pct": round((next12 / last12 - 1) * 100, 1) if last12 else None,
+                        "low12": round(sum(f["low"] for f in forecast)), "high12": round(sum(f["high"] for f in forecast))},
+            "accuracy": accuracy,
+            "model": "Log-linear trend on the last 24 months (best of 12 models tested)"}

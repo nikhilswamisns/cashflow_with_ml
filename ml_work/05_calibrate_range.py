@@ -106,6 +106,10 @@ def draw(origin, n, title, fname, actual=True):
 
 
 fc, lo, hi, idx = draw("2025-09-01", 12, "Backtest with the calibrated range: train on 4 years, forecast year 5", "05_backtest_new_range.png")
+act = y.reindex(idx)
+pd.DataFrame({"actual": act, "forecast": fc, "low": fc * lo, "high": fc * hi,
+              "miss_pct": (act - fc) / act * 100, "inside_range": (act >= fc * lo) & (act <= fc * hi)},
+             index=idx).round(1).to_csv(OUT / "05_backtest_new_range.csv")
 print(f"\nBacktest band (built before Oct 2025): low = {lo:.2f} x trend, high = {hi:.2f} x trend")
 fc, lo, hi, idx = draw("2026-09-01", 12, "Forecast Oct 2026 - Sep 2027 with the calibrated range", "05_forecast_new_range.png", actual=False)
 pd.DataFrame({"trend_forecast": fc, "low": fc * lo, "high": fc * hi}, index=idx).round(0).to_csv(OUT / "05_forecast_new_range.csv")
