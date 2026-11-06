@@ -1,6 +1,6 @@
 /* ML Forecast page for the dashboard (added to the page by the server - index.html / app.js are unchanged).
    Adds a "ML Forecast" item to the sidebar with:
-     - model status, Train model, Backtest, and the ML on/off switch
+     - model status, Backtest, and the ML on/off switch
      - "Compare current run": ending cash with fixed rules vs with ML, with a P10-P90 band
      - the invoices / orders whose expected week moved the most
    All data comes from the /api/ml/... endpoints. */
@@ -70,10 +70,9 @@
         <div class="ml-sub">Takes effect on the next forecast run.</div>
       </div>
 
-      <details class="ml-adv"><summary>Admin: model training and tests</summary>
+      <details class="ml-adv"><summary>Admin: model tests</summary>
       <div class="ml-grid" id="ml-status-cards"></div>
       <div class="ml-row">
-        <button class="btn-secondary" id="ml-train">⚙ Train model</button>
         <button class="btn-secondary" id="ml-backtest">📊 Run backtest (about 1 min)</button>
         <button class="btn-primary" id="ml-compare">⚖ Compare current run: rules vs ML</button>
       </div>
@@ -84,7 +83,6 @@
       </details>`;
     main.appendChild(sec);
 
-    $('ml-train').onclick = train;
     $('ml-backtest').onclick = backtest;
     $('ml-compare').onclick = compare;
     $('ml-toggle').onclick = toggle;
@@ -143,8 +141,8 @@
     const cards = [];
     if (!state.trained) {
       cards.push(`<div class="ml-card"><h4>Model</h4><div class="ml-big ml-bad">Not trained</div>
-        <div class="ml-sub">${state.history_file_found ? 'History file found: ' + esc(state.history_file_found) + '. Click Train model.' :
-        'Put Zoho_history_*.xlsx into the ml_data folder, then click Train model.'}</div></div>`);
+        <div class="ml-sub">${state.history_file_found ? 'Model file not found on this server.' :
+        'Model file not found on this server.'}</div></div>`);
     } else {
       const names = { inv: 'Customer invoices', so: 'Sales orders', bill: 'Vendor bills' };
       cards.push(`<div class="ml-card"><h4>Model</h4><div class="ml-big ml-good">Trained</div>
@@ -175,15 +173,6 @@
     } catch (e) { msg(e.message, 'bad'); }
   }
 
-  async function train() {
-    busy('ml-train', true, 'Training...');
-    msg('Training on the Zoho history (about 15 seconds)...');
-    try { await call(`${API}/train`, { method: 'POST' }); msg('Model trained.'); }
-    catch (e) { msg(e.message, 'bad'); }
-    busy('ml-train', false);
-    refreshStatus();
-  }
-
   async function backtest() {
     busy('ml-backtest', true, 'Testing...');
     msg('Walk-forward test running (about 1 minute). It trains only on data before each cut-off and checks what really happened.');
@@ -212,7 +201,7 @@
   async function compare() {
     const runId = typeof currentRunId !== 'undefined' ? currentRunId : null;
     if (!runId) { msg('No run selected. Create or pick a run first (Sync Zoho).', 'bad'); return; }
-    if (!state || !state.trained) { msg('Train the model first.', 'bad'); return; }
+    if (!state || !state.trained) { msg('ML model not available on this server.', 'bad'); return; }
     busy('ml-compare', true, 'Comparing...');
     msg('Forecasting this run twice (rules and ML) and simulating payment timing. A few seconds...');
     try {
@@ -268,7 +257,7 @@
       options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
         plugins: { legend: { labels: { color: '#8c93a3', filter: (i) => !i.text.startsWith('P90') } },
           tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${money(c.parsed.y)}` } } },
-        scales: { x: { ticks: { color: '#8c93a3', maxTicksLimit: 14 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        scales: { x: { ticks: { color: '#8c93a3', autoSkip: false, minRotation: 0, maxRotation: 60, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
           y: { ticks: { color: '#8c93a3', callback: (v) => money(v) }, grid: { color: 'rgba(255,255,255,0.05)' } } } },
     });
   }

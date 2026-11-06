@@ -95,6 +95,7 @@
       const r = await fetch('/api/ml/revenue-forecast');
       const j = await r.json();
       if (!r.ok) throw new Error(j.detail || 'Could not load the forecast');
+      if (typeof Chart === 'undefined') throw new Error('Chart library not loaded (needs access to cdn.jsdelivr.net).');
       data = j;
       loaded = true;
       kpis();

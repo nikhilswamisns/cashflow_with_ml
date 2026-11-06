@@ -16,6 +16,8 @@ def on_startup():
         print('\n  LOGIN DISABLED (CASHFLOW_DISABLE_AUTH=1) for requests from this computer only.\n', flush=True)
     elif not auth.load_users():
         print('\n  NO LOGIN USER SET UP. Create one with:  python tools\\add_user.py\n', flush=True)
+    from app import health
+    health.print_startup_report(LOCAL_NO_LOGIN)
 from starlette.middleware.base import BaseHTTPMiddleware
 
 class NoCacheStaticMiddleware(BaseHTTPMiddleware):
@@ -114,6 +116,12 @@ def logout_page():
     return resp
 
 
+@app.get('/api/health', include_in_schema=False)
+def health_check():
+    from app import health
+    return health.run_checks(LOCAL_NO_LOGIN)
+
+
 @app.get('/api/auth/me', include_in_schema=False)
 def me(request: Request):
     return {'user': getattr(request.state, 'user', None)}
@@ -138,9 +146,11 @@ def brand_background():
 
 
 # The dashboard page, with the login helper (logo + logout) added. index.html itself is not changed.
-def _dashboard_html(directory: Path, base: str) -> HTMLResponse:
+def _dashboard_html(directory: Path, base: str, skip: tuple = ()) -> HTMLResponse:
     html = (directory / 'index.html').read_text(encoding='utf-8')
-    for name, always in (('auth.js', True), ('ml.js', True), ('forecast.js', False)):
+    for name, always in (('auth.js', True), ('health.js', True), ('ml.js', True), ('forecast.js', False)):
+        if name in skip:
+            continue
         tag = f'<script src="{base}/{name}?v=1"></script>'
         if (always or (directory / name).exists()) and name not in html:
             html = html.replace('</body>', f'{tag}\n</body>') if '</body>' in html else html + tag
@@ -160,7 +170,7 @@ static2_dir = Path(__file__).parent.parent / 'static_v2'
 @app.get('/ui2/', include_in_schema=False)
 @app.get('/ui2/index.html', include_in_schema=False)
 def dashboard2():
-    return _dashboard_html(static2_dir, '/ui2')
+    return _dashboard_html(static2_dir, '/ui2', skip=('ml.js',))   # /ui2 has no Payment Timing (ML) tab
 
 
 if static_dir.exists():

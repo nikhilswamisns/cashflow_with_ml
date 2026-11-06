@@ -174,7 +174,7 @@ async function overlayMlTrajectory(chart, runId, limit) {
   if (chartTrajectory !== chart) return; // chart was rebuilt while the call was running
   if (!c) {
     if (legend) legend.style.display = "none";
-    note.textContent = "ML timing line not available (train the model on the ML Forecast page).";
+    note.textContent = "ML timing line not available.";
     return;
   }
   const ML = "#f0a43a";
@@ -196,15 +196,6 @@ async function overlayMlTrajectory(chart, runId, limit) {
 // Expected receipts: known (rules) + expected new revenue (ML revenue trend model), from GET /api/ml/runs/{run}/receipts-outlook.
 const rcCache = {};
 let chartReceipts = null;
-let rcMode = "cum"; // "cum" running total, "wk" per week
-
-function setReceiptsMode(m) {
-  rcMode = m;
-  document.getElementById("rc-mode-cum").classList.toggle("active", m === "cum");
-  document.getElementById("rc-mode-wk").classList.toggle("active", m === "wk");
-  renderReceiptsOutlook(currentRunId, activeTimeframe);
-}
-
 const rcOn = { documents: true, known: true, forecast: true, range: true };
 document.addEventListener("click", (e) => {
   const chip = e.target.closest && e.target.closest("#rc-checks .rc-chip");
@@ -226,22 +217,25 @@ async function renderReceiptsOutlook(runId, limit) {
     } catch (_) { c = null; }
     rcCache[runId] = c;
   }
-  if (!c) return;
+  if (!c) {
+    if (window.panelNotice) window.panelNotice("chart-receipts-outlook", "Expected receipts not available for this run (the revenue forecast files are missing on the server; see the banner at the top).");
+    return;
+  }
+  if (window.panelNotice && window.Chart) window.panelNotice("chart-receipts-outlook");
   const on = (k) => rcOn[k];
   const n = Math.min(limit || 52, c.weeks.length);
   const add = (a) => a.slice(0, n);
-  const run = (a) => { let t = 0; return a.slice(0, n).map((v) => (t += v)); };
-  const shape = rcMode === "cum" ? run : add;
+  const shape = add;
   const docs = c.documents;
   const known = c.documents.map((d, i) => d + c.run_rate[i]);
   const withMl = known.map((k, i) => k + c.forecast_added[i]);
   const low = known.map((k, i) => k + c.forecast_added_low[i]);
   const high = known.map((k, i) => k + c.forecast_added_high[i]);
-  const line = (label, data, color, extra = {}) => ({ type: "line", label, data: shape(data), borderColor: color, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, tension: rcMode === "cum" ? 0.15 : 0.25, fill: false, ...extra });
+  const line = (label, data, color, extra = {}) => ({ type: "line", label, data: shape(data), borderColor: color, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, tension: 0.25, fill: false, ...extra });
   const datasets = [
-    line("Booked invoices and orders", docs, "#a9c3f5", { hidden: !on("documents"), borderWidth: 2 }),
-    line("Known (booked + run-rate)", known, "#5b8def", { hidden: !on("known") }),
-    line("Known + expected new revenue", withMl, "#f0a43a", { hidden: !on("forecast"), borderDash: [7, 5] }),
+    line("Invoiced and ordered", docs, "#a9c3f5", { hidden: !on("documents"), borderWidth: 2 }),
+    line("Plus regular reseller income", known, "#5b8def", { hidden: !on("known") }),
+    line("Plus forecast new sales", withMl, "#f0a43a", { hidden: !on("forecast"), borderDash: [7, 5] }),
     line("Range low", low, "rgba(240,164,58,0.4)", { hidden: !on("range"), borderWidth: 1, hideTip: true }),
     line("Range high", high, "rgba(240,164,58,0.4)", { hidden: !on("range"), borderWidth: 1, hideTip: true, fill: "-1", backgroundColor: "rgba(240,164,58,0.14)" }),
   ];
@@ -254,7 +248,7 @@ async function renderReceiptsOutlook(runId, limit) {
       plugins: { legend: { display: false }, tooltip: { filter: (it) => !it.dataset.hideTip,
         callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${fmtMoney(ctx.parsed.y)}` } } },
       scales: {
-        x: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 10 }, maxTicksLimit: 12, maxRotation: 0, autoSkip: true } },
+        x: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 10 }, autoSkip: false, minRotation: 0, maxRotation: 60 } },
         y: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 10 }, callback: (v) => fmtMoney(v) } },
       },
     },
@@ -337,7 +331,7 @@ function renderCharts(analytics, limit = 52) {
         scales: {
           x: {
             grid: { color: "rgba(255, 255, 255, 0.06)" },
-            ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 10 }, maxTicksLimit: 12, maxRotation: 0, autoSkip: true },
+            ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 10 }, autoSkip: false, minRotation: 0, maxRotation: 60 },
           },
           y: {
             grid: { color: "rgba(255, 255, 255, 0.06)" },
@@ -427,7 +421,7 @@ function renderCharts(analytics, limit = 52) {
         scales: {
           x: {
             grid: { color: "rgba(255, 255, 255, 0.06)" },
-            ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 10 }, maxTicksLimit: 12, maxRotation: 0, autoSkip: true },
+            ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 10 }, autoSkip: false, minRotation: 0, maxRotation: 60 },
           },
           y: {
             grid: { color: "rgba(255, 255, 255, 0.06)" },
@@ -485,7 +479,7 @@ function renderCharts(analytics, limit = 52) {
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 9 }, maxTicksLimit: 13 },
+            ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 9 }, autoSkip: false, minRotation: 0, maxRotation: 60 },
           },
           y: {
             grid: { color: "rgba(255, 255, 255, 0.06)" },
@@ -536,7 +530,7 @@ function renderCharts(analytics, limit = 52) {
         x: {
           stacked: true,
           grid: { display: false },
-          ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 9 }, maxTicksLimit: 13 },
+          ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 9 }, autoSkip: false, minRotation: 0, maxRotation: 60 },
         },
         y: {
           stacked: true,
