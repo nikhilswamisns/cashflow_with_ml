@@ -274,7 +274,7 @@
     "use_for": {
       "invoices": true,
       "sales_orders": true,
-      "bills": false
+      "bills": true
     },
     "model_path": "data/ml_models/timing_models.joblib",
     "min_party_history": 3,
