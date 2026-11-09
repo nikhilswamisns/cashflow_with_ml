@@ -1,0 +1,79 @@
+/* Dashboard: lead row and receipts chips. */
+.kpi-label {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.kpi-value {
+  font-family: 'Geist Variable', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin: 6px 0 4px;
+  white-space: nowrap;
+}
+.kpi-note {
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.4;
+}
+.kpi-value.neg {
+  color: var(--neg);
+}
+.kpi-value.pos {
+  color: var(--pos);
+}
+.lead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 14px;
+  align-items: stretch;
+}
+.chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 5px 11px 5px 9px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.chip i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.chip.on {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+.chip:not(.on) i {
+  opacity: 0.35;
+}
+.chip b {
+  font-family: 'Geist Mono Variable', monospace;
+  font-weight: 500;
+  color: var(--text-2);
+}
+@media (max-width: 1180px) {
+  .lead {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 700px) {
+  .kpi-value {
+    font-size: 21px;
+  }
+}
+.lead {
+  display: block;
+}

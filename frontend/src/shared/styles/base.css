@@ -1,0 +1,72 @@
+/* Resets and element defaults. */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  font-family:
+    'Geist Variable',
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.num,
+.kpi-value,
+.mono {
+  font-family: 'Geist Mono Variable', ui-monospace, 'SF Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+.ico {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+.icon-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+@media (max-width: 900px) {
+  body.nav-open .rail {
+    transform: none;
+  }
+  body.nav-open .scrim {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

@@ -1,0 +1,11 @@
+/* Import order is the cascade order: tokens, base, shared UI, then each feature. */
+@import './tokens.css';
+@import './base.css';
+@import './ui.css';
+@import '../../features/shell/shell.css';
+@import '../../features/dashboard/dashboard.css';
+@import '../../features/chat/chat.css';
+@import '../../features/matrix/matrix.css';
+@import '../../features/sync/sync.css';
+@import '../../features/config/config.css';
+@import '../../features/revenue/revenue.css';

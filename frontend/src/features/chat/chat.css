@@ -1,0 +1,199 @@
+/* Ask Gutster popup. */
+.ask {
+  display: flex;
+  flex-direction: column;
+}
+.ask-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ask-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--brand-solid);
+  color: #fff;
+}
+.ask-mark .ico {
+  width: 16px;
+  height: 16px;
+}
+.thread {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 6px 2px 10px;
+  min-height: 180px;
+}
+.msg-q {
+  align-self: flex-end;
+  max-width: 88%;
+  background: var(--brand-solid);
+  color: #fff;
+  padding: 9px 12px;
+  border-radius: 12px 12px 3px 12px;
+  font-size: 13.5px;
+}
+.msg-a {
+  align-self: flex-start;
+  max-width: 96%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 11px 13px;
+  border-radius: 12px 12px 12px 3px;
+  font-size: 13.5px;
+  color: var(--text);
+}
+.msg-a b {
+  font-weight: 600;
+}
+.msg-a .src {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-strong);
+  color: var(--muted);
+  font-size: 12px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 10px;
+}
+.chips button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12.5px;
+}
+.chips button:hover {
+  border-color: var(--brand);
+  color: var(--brand-ink);
+}
+.composer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 6px;
+  background: var(--surface);
+}
+.composer:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+.composer input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  padding: 6px 8px;
+}
+.composer .icon-btn {
+  border: 0;
+  background: none;
+}
+.send {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--brand-solid);
+  color: #fff;
+}
+@media (max-width: 1180px) {
+  .ask .thread {
+    min-height: 0;
+    max-height: 360px;
+  }
+}
+.msg-a .src {
+  display: block;
+}
+.chat-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 18px 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--brand-solid);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: var(--pop);
+}
+.chat-fab:hover {
+  filter: brightness(1.08);
+}
+.chat-fab.hide {
+  display: none;
+}
+.chat-pop {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 55;
+  width: 380px;
+  height: min(580px, calc(100vh - 48px));
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--pop);
+  padding: 14px 14px 12px;
+}
+.chat-pop .card-head {
+  flex: none;
+  flex-wrap: nowrap;
+}
+.chat-pop .card-head .pill {
+  margin-left: auto;
+}
+.chat-pop .thread {
+  min-height: 0;
+}
+.chat-pop .icon-btn {
+  width: 32px;
+  height: 32px;
+}
+@media (max-width: 700px) {
+  .chat-fab {
+    right: 14px;
+    bottom: 14px;
+  }
+  .chat-fab span {
+    display: none;
+  }
+  .chat-fab {
+    width: 48px;
+    padding: 0;
+    justify-content: center;
+  }
+  .chat-pop {
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    height: min(86vh, 640px);
+    border-radius: 14px 14px 0 0;
+  }
+}

@@ -1,0 +1,75 @@
+/* Design tokens: light is the default, dark overrides. Colour always carries one meaning. */
+:root,
+[data-theme='light'] {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --border: #e3e7ee;
+  --border-strong: #cfd6e1;
+  --text: #0f1729;
+  --text-2: #475467;
+  --muted: #5f6a7d;
+  --brand: #2563eb;
+  --brand-solid: #2563eb;
+  --brand-ink: #1d4ed8;
+  --brand-soft: #e8efff;
+  --pos: #12744d;
+  --pos-soft: #e4f5ec;
+  --neg: #cf3f4c;
+  --neg-soft: #fdebed;
+  --warn: #b9780f;
+  --warn-soft: #fbf0dc;
+
+  --c-cash: #2563eb;
+  --c-ml: #e08a00;
+  --c-booked: #1d3f9c;
+  --c-reseller: #0e9aa7;
+  --c-forecast: #f2a33a;
+  --c-in: #1ea672;
+  --c-out: #e0516b;
+  --c-floor: #d6455b;
+  --c-s1: #7c5cff;
+  --c-s2: #ff8a3d;
+  --c-s3: #8392a8;
+  --c-s4: #2f7cf6;
+  --grid: rgba(15, 23, 41, 0.07);
+  --tick: #6b7587;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --pop: 0 12px 32px rgba(16, 24, 40, 0.14);
+}
+[data-theme='dark'] {
+  --bg: #0b0f14;
+  --surface: #121821;
+  --surface-2: #0f141c;
+  --border: #1f2733;
+  --border-strong: #2b3646;
+  --text: #e8ecf2;
+  --text-2: #aab3c2;
+  --muted: #8590a3;
+  --brand: #5b8def;
+  --brand-solid: #3562d6;
+  --brand-ink: #7da3f5;
+  --brand-soft: rgba(91, 141, 239, 0.14);
+  --pos: #3dd598;
+  --pos-soft: rgba(61, 213, 152, 0.12);
+  --neg: #ff6b7a;
+  --neg-soft: rgba(255, 107, 122, 0.12);
+  --warn: #f2b544;
+  --warn-soft: rgba(242, 181, 68, 0.12);
+  --c-cash: #5b8def;
+  --c-ml: #f2a33a;
+  --c-booked: #6f8ff0;
+  --c-reseller: #2fc4d1;
+  --c-forecast: #f5b657;
+  --c-in: #3dd598;
+  --c-out: #ff6b7f;
+  --c-floor: #ff6b7a;
+  --c-s1: #9b85ff;
+  --c-s2: #ff9a57;
+  --c-s3: #7d8aa0;
+  --c-s4: #5b9bff;
+  --grid: rgba(255, 255, 255, 0.06);
+  --tick: #8590a3;
+  --shadow: none;
+  --pop: 0 14px 36px rgba(0, 0, 0, 0.55);
+}
