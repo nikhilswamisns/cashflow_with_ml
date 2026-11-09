@@ -142,7 +142,8 @@ h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.015em; }
 @media (max-width: 1180px) {
   .lead { grid-template-columns: minmax(0, 1fr); }
   .ask .thread { min-height: 0; max-height: 360px; }
-  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .kpis .kpi { grid-column: span 2; } .kpis .kpi:nth-child(n+4) { grid-column: span 3; }
 }
 @media (max-width: 900px) {
   .app { grid-template-columns: minmax(0, 1fr); }
@@ -157,6 +158,7 @@ h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.015em; }
 }
 @media (max-width: 700px) {
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .kpis .kpi, .kpis .kpi:nth-child(n+4) { grid-column: auto; }
   .kpis .kpi:first-child { grid-column: 1 / -1; }
   .kpi-value { font-size: 21px; }
   .card { padding: 16px; }

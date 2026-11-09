@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import * as Menu from '@radix-ui/react-dropdown-menu'
-import { ArrowRightFromLine, Banknote, Database, Download, LayoutDashboard, Menu as MenuIcon, MessageSquare, Moon, MoreVertical, RefreshCw, Repeat2, SlidersHorizontal, Sun, Table2, TrendingUp, type LucideIcon } from 'lucide-react'
+import { ArrowRightFromLine, Banknote, Database, Download, LayoutDashboard, Menu as MenuIcon, MessageSquare, Moon, MoreVertical, RefreshCw, SlidersHorizontal, Sun, Table2, TrendingUp, type LucideIcon } from 'lucide-react'
 import { useTheme } from '../lib/theme'
 import { useDashboard, useRuns, useUser } from '../data/hooks'
 import { exportUrl, logout, syncZoho } from '../data/source'
@@ -13,7 +13,7 @@ import { ChatWidget } from './ChatWidget'
 
 export interface ShellCtx { runId: string; afterRun: (id: string) => Promise<void>; sync: (runDate?: string) => Promise<void>; syncing: boolean }
 const NAV: { label: string; items: [string, string, LucideIcon][] }[] = [
-  { label: 'Forecast', items: [['/', 'Dashboard', LayoutDashboard], ['/matrix', 'Cash forecast', Table2], ['/receivables', 'Receivables & payables', Repeat2], ['/revenue', 'Revenue forecast', TrendingUp]] },
+  { label: 'Forecast', items: [['/', 'Dashboard', LayoutDashboard], ['/matrix', 'Cash forecast', Table2], ['/revenue', 'Revenue forecast', TrendingUp]] },
   { label: 'Workspace', items: [['/data', 'Data & sync', Database], ['/assumptions', 'Assumptions', SlidersHorizontal]] },
 ]
 const TITLES: Record<string, string> = Object.fromEntries(NAV.flatMap((g) => g.items.map(([p, l]) => [p, l])))

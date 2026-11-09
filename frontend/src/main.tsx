@@ -16,7 +16,7 @@ import { Revenue } from './pages/Revenue'
 import { Placeholder } from './pages/Placeholder'
 
 const qc = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000, refetchOnWindowFocus: false } } })
-const PAGES: [string, string][] = [['receivables', 'Receivables & payables'], ['ask', 'Ask Gutster']]
+const PAGES: [string, string][] = [['ask', 'Ask Gutster']]
 
 // Chart text is measured on first draw, so load both fonts first (otherwise the "$" on axes gets clipped).
 const fonts = Promise.all([
