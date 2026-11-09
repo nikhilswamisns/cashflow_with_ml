@@ -1,8 +1,8 @@
 import { useRef, useState, type DragEvent } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import { CheckCircle2, CircleAlert, FileUp, RefreshCw } from 'lucide-react'
+import { CheckCircle2, CircleAlert, FileUp, RefreshCw, Zap } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { autoRun, fetchZohoStatus, openArchive, runFromSnapshot } from '../data/source'
+import { autoRun, fetchZohoStatus, openArchive, quickDemo, runFromSnapshot } from '../data/source'
 import { useHealth } from '../data/hooks'
 import type { ZohoStatus } from '../data/types'
 import type { ShellCtx } from '../components/Shell'
@@ -21,7 +21,7 @@ export function DataSync() {
   const [files, setFiles] = useState<File[]>([])
   const [drag, setDrag] = useState(false)
   const [opening, setOpening] = useState('')
-  const [asOf, setAsOf] = useState(fridayOnOrBefore())
+  const [asOf, setAsOf] = useState('2026-08-14')   // same default as /ui2
   const [busy, setBusy] = useState('')
   const fileIn = useRef<HTMLInputElement>(null)
   const snapIn = useRef<HTMLInputElement>(null)
@@ -120,6 +120,10 @@ export function DataSync() {
             const f = e.target.files?.[0]; e.target.value = ''
             if (f) void create('Re-running from the snapshot', () => runFromSnapshot(f), `Forecast rebuilt from ${f.name}.`)
           }} />
+        </div>
+        <div className="tool-row">
+          <div><b>Test with August 31 raw files</b><p className="sub">Same button as /ui2. The server currently answers it with a "disabled" message.</p></div>
+          <button className="btn" disabled={!!busy} onClick={() => void create('Calculating the baseline', quickDemo, 'August 31 forecast executed cleanly!')}><Zap size={16} /> Run baseline</button>
         </div>
         <div className="tool-row">
           <div><b>Zoho data folder for the selected run</b><p className="sub">Opens the archive folder if the server runs on your own PC; otherwise shows its path.</p></div>

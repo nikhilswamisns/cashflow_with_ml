@@ -80,6 +80,7 @@ export function runFromSnapshot(file: File) {
   const fd = new FormData(); fd.append('file', file)
   return api<NewRun>('/forecast/run-from-snapshot', { method: 'POST', body: fd })
 }
+export const quickDemo = () => api<NewRun>('/forecast/quick-demo', { method: 'POST' })
 export const openArchive = (id: string) => api<{ opened?: boolean; folder?: string }>(`/runs/${id}/open-archive`, { method: 'POST' })
 // zoho/status makes a live call to Zoho, so it only runs when the user asks
 export const fetchZohoStatus = () => api<ZohoStatus>('/zoho/status')
