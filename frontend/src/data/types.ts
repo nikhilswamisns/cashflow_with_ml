@@ -44,3 +44,12 @@ export interface ZohoStatus { ok: boolean; org_id?: string; org_name?: string; m
 export interface HealthCheck { name: string; ok: boolean; required: boolean; detail: string; fix: string }
 export interface Health { status: 'ok' | 'degraded' | 'broken' | string; checks: HealthCheck[] }
 export interface NewRun { run_id: string; live_opening_cash?: number; archive_folder?: string | null; detected_files?: { filename: string; source: string; count?: number; error?: string }[] }
+
+export interface RevenueForecast {
+  history: { date: string; revenue: number }[]                       // date = "YYYY-MM"
+  forecast: { date: string; forecast: number; low: number; high: number }[]
+  summary: { last12: number; next12: number; growth_pct: number | null; low12: number; high12: number }
+  accuracy: { months: number; avg_miss_pct: number; inside_range: number } | null
+  model: string
+}
+export type ConfigTable = 'assumptions' | 'corporate_accounts' | 'freight_duty_vendors' | 'cc_category_coa_map'

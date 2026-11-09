@@ -1,6 +1,6 @@
 // The ONLY file that knows the API shapes. Everything is read-only here.
 import { api } from './api'
-import type { Answer, Health, NewRun, ZohoStatus, Kpis, MatrixCell, MatrixData, MatrixRow, MlTiming, OpeningCash, Receipts, RowKind, RunInfo } from './types'
+import type { Answer, ConfigTable, RevenueForecast, Health, NewRun, ZohoStatus, Kpis, MatrixCell, MatrixData, MatrixRow, MlTiming, OpeningCash, Receipts, RowKind, RunInfo } from './types'
 
 interface RunRow { run_id: string; run_date: string; created_at: string }
 interface Analytics {
@@ -58,6 +58,12 @@ export async function fetchMatrix(id: string): Promise<MatrixData> {
   }))
   return { weeks: m.weeks, rows }
 }
+
+export const fetchRevenueForecast = () => api<RevenueForecast>('/ml/revenue-forecast')
+export const fetchConfig = (table: ConfigTable) => api<Record<string, unknown>>(`/config/${table}`)
+// writes the server's config file and clears its cache, exactly like /ui2's "Save & Invalidate Cache"
+export const saveConfig = (table: ConfigTable, body: unknown) =>
+  api<{ message: string }>(`/config/${table}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 
 export const fetchUser = () => api<{ user: string | null }>('/auth/me')
 
