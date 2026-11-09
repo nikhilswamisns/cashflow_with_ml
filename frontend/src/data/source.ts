@@ -1,6 +1,6 @@
 // The ONLY file that knows the API shapes. Everything is read-only here.
 import { api } from './api'
-import type { Answer, Kpis, MlTiming, Receipts, RunInfo } from './types'
+import type { Answer, Kpis, MlTiming, OpeningCash, Receipts, RunInfo } from './types'
 
 interface RunRow { run_id: string; run_date: string; created_at: string }
 interface Analytics {
@@ -39,6 +39,13 @@ export async function logout() {
   await api('/auth/logout', { method: 'POST' })
   location.href = '/login'
 }
+
+// ---- actions (these write: sync creates a run, opening cash changes one) ----
+export const syncZoho = () => api<{ run_id: string; live_opening_cash?: number }>('/forecast/sync-zoho-live', { method: 'POST' })
+export const exportUrl = (id: string) => `/api/runs/${id}/export/xlsx`
+export const fetchOpeningCash = (id: string) => api<OpeningCash>(`/runs/${id}/opening-cash`)
+export const saveOpeningCash = (runId: string, amount: number, asOf: string) =>
+  api('/opening-cash', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount, as_of_date: asOf, run_id: runId, entered_by: 'UI' }) })
 
 // Step A placeholder until the AI backend exists (separate track).
 export async function askQuestion(_runId: string, _q: string): Promise<Answer> {

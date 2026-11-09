@@ -9,6 +9,10 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     location.href = `/login?next=${encodeURIComponent(location.pathname)}`
     throw new ApiError(401, 'Not logged in')
   }
-  if (!res.ok) throw new ApiError(res.status, `${path} failed (${res.status})`)
+  if (!res.ok) {
+    let detail = ''
+    try { detail = (await res.json()).detail } catch { /* not json */ }
+    throw new ApiError(res.status, typeof detail === 'string' && detail ? detail : `${path} failed (${res.status})`)
+  }
   return res.json() as Promise<T>
 }

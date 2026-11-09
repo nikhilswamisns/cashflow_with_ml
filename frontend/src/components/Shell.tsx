@@ -4,7 +4,10 @@ import * as Menu from '@radix-ui/react-dropdown-menu'
 import { ArrowRightFromLine, Banknote, Database, Download, LayoutDashboard, Menu as MenuIcon, MessageSquare, Moon, MoreVertical, RefreshCw, Repeat2, SlidersHorizontal, Sun, Table2, TrendingUp, type LucideIcon } from 'lucide-react'
 import { useTheme } from '../lib/theme'
 import { useDashboard, useRuns, useUser } from '../data/hooks'
-import { logout } from '../data/source'
+import { exportUrl, logout, syncZoho } from '../data/source'
+import { useQueryClient } from '@tanstack/react-query'
+import { useDismissToast, useToast } from '../lib/toast'
+import { OpeningCashDialog } from './OpeningCashDialog'
 import { ChatWidget } from './ChatWidget'
 
 export interface ShellCtx { runId: string }
@@ -20,11 +23,29 @@ export function Shell() {
   const [runId, setRunId] = useState('')
   const [open, setOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
+  const [ocOpen, setOcOpen] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const qc = useQueryClient()
+  const toast = useToast()
+  const dismiss = useDismissToast()
   const loc = useLocation()
   const run = runs.find((r) => r.id === runId) ?? runs[0]
   const { data: dash } = useDashboard(run?.id ?? '')
   const { data: me } = useUser()
   const user = me?.user ?? ''
+
+  async function sync() {
+    if (syncing) return
+    setSyncing(true)
+    const wait = toast('Syncing from Zoho… this can take a minute.', 'info', 0)
+    try {
+      const r = await syncZoho()
+      await qc.invalidateQueries({ queryKey: ['runs'] })
+      setRunId(r.run_id)
+      toast(`Synced from Zoho. New run created${r.live_opening_cash ? ` (live bank $${Math.round(r.live_opening_cash).toLocaleString('en-US')})` : ''}.`, 'ok')
+    } catch (e) { toast(/\(500\)/.test((e as Error).message) ? 'Zoho sync failed on the server (500). Check the Zoho connection and the server log.' : 'Zoho sync: ' + (e as Error).message, 'error', 8000) }
+    finally { dismiss(wait); setSyncing(false) }
+  }
 
   useEffect(() => { if (!runId && runs[0]) setRunId(runs[0].id) }, [runs, runId])
   useEffect(() => { setOpen(false) }, [loc.pathname])
@@ -77,9 +98,9 @@ export function Shell() {
             <Menu.Trigger asChild><button className="icon-btn" aria-label="More"><MoreVertical size={18} /></button></Menu.Trigger>
             <Menu.Portal>
               <Menu.Content className="menu" align="end" sideOffset={8}>
-                <Menu.Item className="menu-item"><RefreshCw size={18} />Sync from Zoho</Menu.Item>
-                <Menu.Item className="menu-item"><Download size={18} />Export to Excel</Menu.Item>
-                <Menu.Item className="menu-item"><Banknote size={18} />Set opening cash</Menu.Item>
+                <Menu.Item className="menu-item" disabled={syncing} onSelect={() => void sync()}><RefreshCw size={18} />{syncing ? 'Syncing…' : 'Sync from Zoho'}</Menu.Item>
+                <Menu.Item className="menu-item" disabled={!run} onSelect={() => { if (run) location.href = exportUrl(run.id) }}><Download size={18} />Export to Excel</Menu.Item>
+                <Menu.Item className="menu-item" disabled={!run} onSelect={() => setOcOpen(true)}><Banknote size={18} />Set opening cash</Menu.Item>
                 <Menu.Separator className="menu-sep" />
                 <div className="menu-user"><span className="avatar">{(user || '?')[0].toUpperCase()}</span><span>{user || 'Signed in'}</span></div>
                 <Menu.Item className="menu-item" onSelect={() => void logout()}><ArrowRightFromLine size={18} />Log out</Menu.Item>
@@ -89,6 +110,7 @@ export function Shell() {
         </header>
         <Outlet context={{ runId: run?.id ?? '' } satisfies ShellCtx} />
       </div>
+      {run && <OpeningCashDialog runId={run.id} open={ocOpen} onOpenChange={setOcOpen} />}
       {dash && run && <ChatWidget d={dash} runId={run.id} runLabel={run.label} open={chatOpen} setOpen={setChatOpen} />}
       <div className="ribbon">Step A · sample data from the 30 Oct run · not for sharing</div>
     </div>

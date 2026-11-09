@@ -22,3 +22,13 @@ export interface DashboardData {
 
 export interface RunInfo { id: string; label: string; syncedLabel: string }
 export interface Answer { html: string; source: string }
+
+export interface OpeningCash {
+  run_date: string
+  accounts: { name: string; balance: number }[]
+  zoho_cash: number
+  manual_adjustments: { label: string; amount: number }[]
+  opening_cash: number
+  override: number | null
+  override_as_of: string | null
+}
