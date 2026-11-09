@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useRevenueForecast } from '../data/hooks'
 import { RevenueChart } from '../charts/RevenueChart'
+import { PeriodsChart } from '../charts/PeriodsChart'
+import { ForecastTable } from '../components/ForecastTable'
 import { alpha, useChartTokens } from '../charts/tokens'
 
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -10,7 +12,7 @@ const short = (n: number) => Math.abs(n) >= 1e6 ? `$${(n / 1e6).toFixed(2)}M` : 
 export function Revenue() {
   const { data: d, error, isPending } = useRevenueForecast()
   const t = useChartTokens()
-  const [range, setRange] = useState<24 | 'all'>('all')
+  const [range, setRange] = useState<12 | 24 | 'all'>('all')
 
   if (error) return <main className="page"><div className="card placeholder"><h2>The revenue forecast could not be loaded</h2><p>{error.message}</p></div></main>
   if (isPending || !d) return <main className="page"><div className="loading">Loading…</div></main>
@@ -29,7 +31,7 @@ export function Revenue() {
         <div className="card-head">
           <div><h2>Monthly revenue: history and next 12 months</h2><p className="sub">{d.model}</p></div>
           <div className="seg" role="group" aria-label="Range">
-            {([[24, '2 years'], ['all', 'All']] as const).map(([k, l]) => (
+            {([[12, '1 year'], [24, '2 years'], ['all', 'All']] as const).map(([k, l]) => (
               <button key={k} className={range === k ? 'on' : ''} aria-pressed={range === k} onClick={() => setRange(k)}>{l}</button>
             ))}
           </div>
@@ -44,6 +46,16 @@ export function Revenue() {
           {a ? `In a test on the last 12 months, a single month's forecast missed by about ${Math.round(a.avg_miss_pct)}% on average, and ${a.inside_range} of ${a.months} months landed inside the range. ` : ''}
           Treat the line as the most likely path and the shaded band as the realistic range. Forecasts for later months are less certain than near ones.
         </p>
+      </section>
+      <section className="grid2 rev-row">
+        <article className="card">
+          <div className="card-head"><div><h2>Revenue by 12-month period</h2><p className="sub">Each bar is one October to September year. The last bar is the forecast.</p></div></div>
+          <div className="chart"><PeriodsChart d={d} /></div>
+        </article>
+        <article className="card">
+          <div className="card-head"><div><h2>Forecast by month</h2><p className="sub">With the likely range and the change against the same month a year earlier.</p></div></div>
+          <ForecastTable d={d} />
+        </article>
       </section>
     </main>
   )

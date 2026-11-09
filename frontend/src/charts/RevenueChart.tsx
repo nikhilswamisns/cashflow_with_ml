@@ -4,6 +4,17 @@ import type { RevenueForecast } from '../data/types'
 import { alpha, useChartTokens } from './tokens'
 import { baseOptions, MONO } from './base'
 import { tickMoney, usd } from '../lib/format'
+import type { Tokens } from './tokens'
+
+// thin dashed line where the actuals end and the forecast begins
+const startMarker = (t: Tokens, at: number) => ({
+  id: 'fcStart',
+  afterDatasetsDraw(chart: any) {
+    const x = chart.scales.x.getPixelForValue(at), { top, bottom } = chart.chartArea, ctx = chart.ctx
+    ctx.save(); ctx.strokeStyle = t.borderStrong; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bottom); ctx.stroke()
+    ctx.setLineDash([]); ctx.fillStyle = t.tick; ctx.font = `500 11px ${MONO}`; ctx.textAlign = 'left'; ctx.fillText('Forecast starts', x + 6, top + 12); ctx.restore()
+  },
+})
 
 export function RevenueChart({ d, months }: { d: RevenueForecast; months: number | 'all' }) {
   const t = useChartTokens()
@@ -31,5 +42,6 @@ export function RevenueChart({ d, months }: { d: RevenueForecast; months: number
     o.plugins.tooltip.callbacks.label = (c: any) => ` ${c.dataset.label}: ${usd(c.parsed.y)}`
     return o
   }, [t])
-  return <Line data={data as any} options={options} />
+  const plugins = useMemo(() => [startMarker(t, nH - 1)], [t, nH])
+  return <Line data={data as any} options={options} plugins={plugins} />
 }
