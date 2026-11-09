@@ -192,6 +192,9 @@ async function overlayMlTrajectory(chart, runId, limit) {
   }
   const ML = "#f0a43a";
   const cut = (a) => a.slice(0, limit);
+  // The blue line must always be the rules-only forecast. The saved run can already be ML-timed (when "Use ML in
+  // forecasts" was on as it was created), which would make both lines identical, so take the rules line from the comparison.
+  if (chart.data.datasets[0]) chart.data.datasets[0].data = cut(c.ending_cash_rules);
   chart.data.datasets.push(
     { label: "Timing range low (p10)", data: cut(c.bands.p10), borderColor: "rgba(240,164,58,0.35)", borderWidth: 1, pointRadius: 0, fill: false, tension: 0.25, hideTip: true },
     { label: "Timing range high (p90)", data: cut(c.bands.p90), borderColor: "rgba(240,164,58,0.35)", borderWidth: 1, pointRadius: 0, fill: "-1", backgroundColor: "rgba(240,164,58,0.14)", tension: 0.25, hideTip: true },
