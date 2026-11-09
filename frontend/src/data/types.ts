@@ -39,3 +39,8 @@ export type RowKind = 'section' | 'group' | 'line' | 'total' | 'opening' | 'gros
 export interface MatrixRow { kind: RowKind; code: string; label: string; field: string | null; values: number[] }
 export interface MatrixWeek { week_ending_friday: string; [field: string]: unknown }
 export interface MatrixData { weeks: MatrixWeek[]; rows: MatrixRow[] }
+
+export interface ZohoStatus { ok: boolean; org_id?: string; org_name?: string; message: string }
+export interface HealthCheck { name: string; ok: boolean; required: boolean; detail: string; fix: string }
+export interface Health { status: 'ok' | 'degraded' | 'broken' | string; checks: HealthCheck[] }
+export interface NewRun { run_id: string; live_opening_cash?: number; archive_folder?: string | null; detected_files?: { filename: string; source: string; count?: number; error?: string }[] }

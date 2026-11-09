@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import * as Menu from '@radix-ui/react-dropdown-menu'
 import { ArrowRightFromLine, Banknote, Database, Download, LayoutDashboard, Menu as MenuIcon, MessageSquare, Moon, MoreVertical, RefreshCw, Repeat2, SlidersHorizontal, Sun, Table2, TrendingUp, type LucideIcon } from 'lucide-react'
 import { useTheme } from '../lib/theme'
@@ -8,9 +8,10 @@ import { exportUrl, logout, syncZoho } from '../data/source'
 import { useQueryClient } from '@tanstack/react-query'
 import { useDismissToast, useToast } from '../lib/toast'
 import { OpeningCashDialog } from './OpeningCashDialog'
+import { HealthBanner } from './HealthBanner'
 import { ChatWidget } from './ChatWidget'
 
-export interface ShellCtx { runId: string }
+export interface ShellCtx { runId: string; afterRun: (id: string) => Promise<void>; sync: (runDate?: string) => Promise<void>; syncing: boolean }
 const NAV: { label: string; items: [string, string, LucideIcon][] }[] = [
   { label: 'Forecast', items: [['/', 'Dashboard', LayoutDashboard], ['/matrix', 'Cash forecast', Table2], ['/receivables', 'Receivables & payables', Repeat2], ['/revenue', 'Revenue forecast', TrendingUp]] },
   { label: 'Workspace', items: [['/data', 'Data & sync', Database], ['/assumptions', 'Assumptions', SlidersHorizontal]] },
@@ -29,19 +30,26 @@ export function Shell() {
   const toast = useToast()
   const dismiss = useDismissToast()
   const loc = useLocation()
+  const navigate = useNavigate()
   const run = runs.find((r) => r.id === runId) ?? runs[0]
   const { data: dash } = useDashboard(run?.id ?? '')
   const { data: me } = useUser()
   const user = me?.user ?? ''
 
-  async function sync() {
+  // every way of creating a run ends here: refresh the run list, select the new run, show its dashboard
+  async function afterRun(id: string) {
+    await qc.invalidateQueries({ queryKey: ['runs'] })
+    setRunId(id)
+    navigate('/')
+  }
+
+  async function sync(runDate?: string) {
     if (syncing) return
     setSyncing(true)
     const wait = toast('Syncing from Zoho… this can take a minute.', 'info', 0)
     try {
-      const r = await syncZoho()
-      await qc.invalidateQueries({ queryKey: ['runs'] })
-      setRunId(r.run_id)
+      const r = await syncZoho(runDate)
+      await afterRun(r.run_id)
       toast(`Synced from Zoho. New run created${r.live_opening_cash ? ` (live bank $${Math.round(r.live_opening_cash).toLocaleString('en-US')})` : ''}.`, 'ok')
     } catch (e) { toast(/\(500\)/.test((e as Error).message) ? 'Zoho sync failed on the server (500). Check the Zoho connection and the server log.' : 'Zoho sync: ' + (e as Error).message, 'error', 8000) }
     finally { dismiss(wait); setSyncing(false) }
@@ -108,7 +116,8 @@ export function Shell() {
             </Menu.Portal>
           </Menu.Root>
         </header>
-        <Outlet context={{ runId: run?.id ?? '' } satisfies ShellCtx} />
+        <HealthBanner />
+        <Outlet context={{ runId: run?.id ?? '', afterRun, sync, syncing } satisfies ShellCtx} />
       </div>
       {run && <OpeningCashDialog runId={run.id} open={ocOpen} onOpenChange={setOcOpen} />}
       {dash && run && <ChatWidget d={dash} runId={run.id} runLabel={run.label} open={chatOpen} setOpen={setChatOpen} />}

@@ -1,6 +1,6 @@
 // The ONLY file that knows the API shapes. Everything is read-only here.
 import { api } from './api'
-import type { Answer, Kpis, MatrixCell, MatrixData, MatrixRow, MlTiming, OpeningCash, Receipts, RowKind, RunInfo } from './types'
+import type { Answer, Health, NewRun, ZohoStatus, Kpis, MatrixCell, MatrixData, MatrixRow, MlTiming, OpeningCash, Receipts, RowKind, RunInfo } from './types'
 
 interface RunRow { run_id: string; run_date: string; created_at: string }
 interface Analytics {
@@ -67,7 +67,23 @@ export async function logout() {
 }
 
 // ---- actions (these write: sync creates a run, opening cash changes one) ----
-export const syncZoho = () => api<{ run_id: string; live_opening_cash?: number }>('/forecast/sync-zoho-live', { method: 'POST' })
+export const syncZoho = (runDate?: string) =>
+  api<NewRun>(`/forecast/sync-zoho-live${runDate ? `?run_date=${encodeURIComponent(runDate)}` : ''}`, { method: 'POST' })
+export function autoRun(files: File[], openingCash: string, asOf: string) {
+  const fd = new FormData()
+  files.forEach((f) => fd.append('files', f))
+  if (openingCash) fd.append('opening_cash', openingCash)
+  if (asOf) fd.append('as_of_date', asOf)
+  return api<NewRun>('/forecast/auto-run', { method: 'POST', body: fd })
+}
+export function runFromSnapshot(file: File) {
+  const fd = new FormData(); fd.append('file', file)
+  return api<NewRun>('/forecast/run-from-snapshot', { method: 'POST', body: fd })
+}
+export const openArchive = (id: string) => api<{ opened?: boolean; folder?: string }>(`/runs/${id}/open-archive`, { method: 'POST' })
+// zoho/status makes a live call to Zoho, so it only runs when the user asks
+export const fetchZohoStatus = () => api<ZohoStatus>('/zoho/status')
+export const fetchHealth = () => api<Health>('/health')
 export const exportUrl = (id: string) => `/api/runs/${id}/export/xlsx`
 export const fetchOpeningCash = (id: string) => api<OpeningCash>(`/runs/${id}/opening-cash`)
 export const saveOpeningCash = (runId: string, amount: number, asOf: string) =>
