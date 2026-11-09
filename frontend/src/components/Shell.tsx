@@ -112,7 +112,6 @@ export function Shell() {
       </div>
       {run && <OpeningCashDialog runId={run.id} open={ocOpen} onOpenChange={setOcOpen} />}
       {dash && run && <ChatWidget d={dash} runId={run.id} runLabel={run.label} open={chatOpen} setOpen={setChatOpen} />}
-      <div className="ribbon">Step A · sample data from the 30 Oct run · not for sharing</div>
     </div>
   )
 }

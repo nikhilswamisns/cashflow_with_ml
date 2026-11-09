@@ -138,8 +138,6 @@ h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.015em; }
 .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 
 .scrim { position: fixed; inset: 0; background: rgba(5, 8, 14, .5); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 35; }
-.ribbon { position: fixed; left: 50%; bottom: 10px; transform: translateX(-50%); background: var(--text); color: var(--bg); font-size: 12px;
-  padding: 5px 12px; border-radius: 999px; opacity: .92; z-index: 70; white-space: nowrap; }
 
 @media (max-width: 1180px) {
   .lead { grid-template-columns: minmax(0, 1fr); }
@@ -164,7 +162,6 @@ h2 { font-size: 17px; font-weight: 650; letter-spacing: -0.015em; }
   .card { padding: 16px; }
   .chart { height: 240px; } .chart.tall { height: 270px; }
   .seg button { padding: 5px 9px; }
-  .ribbon { display: none; }
 }
 
 /* React additions */
