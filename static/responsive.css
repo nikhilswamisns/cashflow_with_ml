@@ -1,0 +1,114 @@
+/* Responsive layer for /ui2. Loaded after style.css. Above 900px the layout is the original desktop one,
+   plus the three-dots menu in the top bar. */
+
+/* ---- top bar: three-dots menu ---- */
+.nav-toggle, .nav-backdrop { display: none; }
+.more-wrap { position: relative; flex: none; }
+.more-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: var(--radius-sm); cursor: pointer;
+  background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-primary);
+}
+.more-btn:hover, .more-btn[aria-expanded="true"] { border-color: rgba(255,255,255,0.18); background: rgba(255,255,255,0.08); }
+.more-btn svg { width: 18px; height: 18px; }
+.more-menu {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 60;
+  min-width: 220px; max-width: calc(100vw - 24px); padding: 6px;
+  background: var(--bg-elevated); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.more-menu[hidden] { display: none; }
+.more-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; cursor: pointer;
+  padding: 9px 12px; border: none; border-radius: var(--radius-sm); background: transparent;
+  color: var(--text-primary); font: 600 13px var(--font-sans);
+}
+.more-item:hover { background: rgba(255,255,255,0.07); }
+.more-sep { height: 1px; background: var(--border); margin: 4px 2px; }
+.more-sep:last-of-type { margin-bottom: 4px; }
+#more-sync-slot:empty { display: none; }
+#more-sync-slot { padding: 4px 2px 6px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+#more-sync-slot .sync-group { display: flex; flex-wrap: wrap; width: 100%; }
+#more-sync-slot .sync-date { flex: 1; min-width: 0; }
+#more-sync-slot .btn-primary { flex: 1 1 100%; min-height: 38px; }
+#more-user .user-chip { display: flex; width: 100%; justify-content: space-between; background: transparent; border: none; padding: 4px 4px 4px 10px; }
+.topbar-right { flex-wrap: nowrap; }
+
+/* ---- charts: hard size limits so a chart can never grow its own container ---- */
+.chart-panel, .charts-grid-two > *, .stat-card { min-width: 0; }
+.chart-wrapper { min-width: 0; overflow: hidden; }
+.chart-wrapper canvas { max-width: 100%; }
+.chart-controls .pill { white-space: nowrap; }
+
+/* ---- narrow desktop next to the sidebar: 2 cards per row so numbers don't wrap ---- */
+@media (min-width: 901px) and (max-width: 1250px) { .cards-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---- tablet and below: sidebar becomes a slide-in drawer ---- */
+@media (max-width: 900px) {
+  html, body { height: 100dvh; }
+  .sidebar {
+    width: min(86vw, 300px); min-width: 0; height: 100dvh; overflow-y: auto;
+    transform: translateX(-100%); transition: transform .22s ease; z-index: 400;
+  }
+  body.nav-open .sidebar { transform: translateX(0); box-shadow: 0 0 40px rgba(0,0,0,.6); }
+  .nav-backdrop {
+    display: block; position: fixed; inset: 0; z-index: 350;
+    background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s ease;
+  }
+  body.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
+  .main { margin-left: 0; width: 100%; height: 100dvh; min-width: 0; }
+  .nav-toggle {
+    display: inline-flex; align-items: center; justify-content: center; flex: none;
+    width: 40px; height: 40px; border-radius: var(--radius-sm); cursor: pointer;
+    background: var(--bg-elevated); border: 1px solid var(--border); color: var(--text-primary);
+  }
+  .nav-toggle svg { width: 20px; height: 20px; }
+
+  .topbar { padding: 10px 16px; flex-wrap: nowrap; }
+  .topbar-left { flex: 1 1 auto; min-width: 0; }
+  .content-section { padding: 18px 16px; }
+  .charts-grid-two { grid-template-columns: minmax(0, 1fr); }
+  .form-row { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---- phones ---- */
+@media (max-width: 700px) {
+  .topbar { padding: 8px 12px; }
+  .topbar-left .page-title { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .topbar-left .date-chip { display: none; }
+  .content-section { padding: 14px 12px; gap: 14px; }
+  .stat-card { padding: 16px; }
+  .stat-value { font-size: 24px; }
+
+  .chart-panel { padding: 14px; }
+  .panel-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .chart-wrapper, .full-width .chart-wrapper { height: 260px; }
+  .chart-controls { align-self: stretch; }
+  .chart-controls .pill { flex: 1; text-align: center; }
+  #traj-legend { gap: 8px 14px !important; }
+  [style*="repeat(3,1fr)"] { grid-template-columns: 1fr !important; }
+
+  .form-row { grid-template-columns: 1fr; }
+  .matrix-actions { flex-wrap: wrap; }
+  .matrix-wrapper { max-height: calc(100dvh - 160px); -webkit-overflow-scrolling: touch; }
+  /* matrix: drop the Code column and slim the frozen Account column so the weekly numbers get the room */
+  .matrix-table.cfm td.col-code, .matrix-table.cfm th.col-code { display: none; }
+  .matrix-table.cfm td.col-acct, .matrix-table.cfm th.col-acct {
+    left: 0; width: 96px; min-width: 96px; max-width: 96px; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px;
+  }
+  .matrix-table.cfm tr.cfm-line td.col-acct { padding-left: 10px; }
+  .matrix-table.cfm tr.cfm-total td.col-acct, .matrix-table.cfm tr.cfm-group td.col-acct { padding-left: 8px; }
+  /* section / group rows have nothing to their right, so let their titles run across */
+  .matrix-table.cfm tr.cfm-section td.col-acct, .matrix-table.cfm tr.cfm-group td.col-acct { overflow: visible; text-overflow: clip; }
+  .matrix-table th, .matrix-table td { padding: 9px 8px; }
+  .matrix-table td.num, .matrix-table.cfm th { font-size: 11px; }
+
+  .modal-content, .oc-modal { width: calc(100vw - 24px); max-width: none; max-height: 90dvh; }
+  .oc-form { flex-direction: column; }
+  .oc-actions { flex-wrap: wrap; }
+  .toast { left: 12px; right: 12px; max-width: none; }
+  .info-tip:hover::after, .info-tip:focus::after { position: fixed; left: 12px; right: 12px; top: auto; width: auto; max-width: none; transform: none; }
+
+  .btn-primary, .btn-secondary, .btn-ghost, .nav-btn, .pill, .rc-chip { min-height: 40px; }
+}

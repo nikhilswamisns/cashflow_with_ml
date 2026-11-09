@@ -46,7 +46,7 @@
   }
 
   async function addUserChip() {
-    const bar = document.querySelector('.topbar-right');
+    const bar = document.getElementById('more-user') || document.querySelector('.topbar-right');
     if (!bar || document.getElementById('user-chip')) return;
     let user = '';
     try {
