@@ -1,9 +1,11 @@
 import { useMemo } from 'react'
 import { useQueries, useQuery } from '@tanstack/react-query'
-import { fetchAnalytics, fetchMl, fetchReceipts, fetchRuns, fetchUser } from './source'
+import { fetchAnalytics, fetchMatrix, fetchMl, fetchReceipts, fetchRuns, fetchUser } from './source'
 import type { DashboardData } from './types'
 
 export const useRuns = () => useQuery({ queryKey: ['runs'], queryFn: fetchRuns })
+export const useMatrix = (runId: string) =>
+  useQuery({ queryKey: ['matrix', runId], queryFn: () => fetchMatrix(runId), enabled: !!runId })
 export const useUser = () => useQuery({ queryKey: ['me'], queryFn: fetchUser, staleTime: Infinity })
 
 // Three calls: analytics (fast), receipts (fast), compare (slow the first time). The page shows as soon as

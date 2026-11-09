@@ -35,6 +35,30 @@ def page_values():
     return json.loads(br('js', js.replace('\n', ' ')))
 
 
+def matrix_check(rid):
+    """Every row and cell of the Cash forecast page must equal the API's matrix layout (runs with a layout only)."""
+    m = get(f'/runs/{rid}/matrix')
+    if not m.get('layout'):
+        print('  SKIP matrix: older run without a layout (drawn from a fixed field list)'); return 0
+    br('goto', f'{BASE}/ui3/matrix'); br('select', '#run', rid); time.sleep(2)
+    js = "JSON.stringify([...document.querySelectorAll('.matrix tbody tr')].map(r=>[...r.children].map(c=>c.textContent)))"
+    for _ in range(15):
+        dom = json.loads(br('js', js) or '[]')
+        if len(dom) == len(m['layout']): break
+        time.sleep(1)
+    bad = 0
+    if len(dom) != len(m['layout']):
+        print(f"  FAIL matrix rows: expected {len(m['layout'])}, page {len(dom)}"); return 1
+    for row, cells in zip(m['layout'], dom):
+        want = [row['code'], row['label']] + ([('\u2014' if abs(v) < 0.005 else usd(v)) for v in row['values']] if row['kind'] not in ('section', 'group') else [''])
+        if cells != want:
+            bad += 1
+            if bad <= 3: print(f"  FAIL matrix row {row['label']!r}: expected {want[:4]}... page {cells[:4]}...")
+    n_cells = sum(len(r['values']) for r in m['layout'])
+    print(f"  {'OK  ' if not bad else 'FAIL'} matrix: {len(dom)} rows, {n_cells} cells {'all equal the API' if not bad else str(bad) + ' rows differ'}")
+    return bad
+
+
 def main():
     runs = get('/runs')[:N_RUNS]
     br('viewport', '1280x900'); br('goto', f'{BASE}/ui3/')
@@ -66,6 +90,8 @@ def main():
             ok = have == want
             failures += not ok
             print(f"  {'OK  ' if ok else 'FAIL'} {name:22} expected {want:>12}   page {have}")
+        failures += matrix_check(rid)
+        br('goto', f'{BASE}/ui3/')
         # the KPI card reads the saved run; the blue line reads /compare. Flag when they disagree (ML timing was on).
         if abs(k['lowest_cash'] - min(rules)) > 1:
             print(f"  NOTE KPI 'Lowest cash ahead' ({usd(k['lowest_cash'])}) differs from the rules-only lowest point "

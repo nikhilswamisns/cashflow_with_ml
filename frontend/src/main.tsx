@@ -9,10 +9,11 @@ import { ThemeProvider } from './lib/theme'
 import { ToastProvider } from './lib/toast'
 import { Shell } from './components/Shell'
 import { Dashboard } from './pages/Dashboard'
+import { Matrix } from './pages/Matrix'
 import { Placeholder } from './pages/Placeholder'
 
 const qc = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000, refetchOnWindowFocus: false } } })
-const PAGES: [string, string][] = [['matrix', 'Cash forecast'], ['receivables', 'Receivables & payables'], ['revenue', 'Revenue forecast'], ['ask', 'Ask Gutster'], ['data', 'Data & sync'], ['assumptions', 'Assumptions']]
+const PAGES: [string, string][] = [['receivables', 'Receivables & payables'], ['revenue', 'Revenue forecast'], ['ask', 'Ask Gutster'], ['data', 'Data & sync'], ['assumptions', 'Assumptions']]
 
 // Chart text is measured on first draw, so load both fonts first (otherwise the "$" on axes gets clipped).
 const fonts = Promise.all([
@@ -29,6 +30,7 @@ fonts.then(() => {
             <Routes>
               <Route element={<Shell />}>
                 <Route index element={<Dashboard />} />
+                <Route path="matrix" element={<Matrix />} />
                 {PAGES.map(([p, t]) => <Route key={p} path={p} element={<Placeholder title={t} />} />)}
               </Route>
             </Routes>
