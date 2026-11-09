@@ -10,8 +10,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="/ui2/style.css?v=5" />
+  <link rel="stylesheet" href="/ui2/responsive.css?v=2" />
 </head>
 <body>
+<div class="nav-backdrop" id="nav-backdrop"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
     <div class="logo-icon">CF</div>
@@ -69,6 +71,7 @@
 <main class="main" id="main-content">
   <header class="topbar">
     <div class="topbar-left">
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5h14M3 10h14M3 15h14"/></svg></button>
       <h1 class="page-title" id="page-title">Executive Dashboard</h1>
       <span class="date-chip" id="topbar-date-chip">Forecast: 2026-08-14</span>
     </div>
@@ -80,12 +83,18 @@
           🔄 Sync Zoho
         </button>
       </div>
-      <button class="btn-secondary" id="btn-download-excel" onclick="downloadCurrentRunExcel()">
-        ⬇ Export
-      </button>
-      <button class="btn-secondary" id="btn-opening-cash" onclick="openOpeningCash()" title="Set the bank balance as opening cash for the selected run">
-        🏦 Opening Cash
-      </button>
+      <div class="more-wrap">
+        <button class="more-btn" id="more-btn" type="button" aria-label="More actions" aria-haspopup="menu" aria-expanded="false" title="More">
+          <svg viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="4" r="1.7"/><circle cx="10" cy="10" r="1.7"/><circle cx="10" cy="16" r="1.7"/></svg>
+        </button>
+        <div class="more-menu" id="more-menu" role="menu" hidden>
+          <div id="more-sync-slot"></div>
+          <button class="more-item" id="btn-download-excel" role="menuitem" onclick="downloadCurrentRunExcel()">⬇ Export</button>
+          <button class="more-item" id="btn-opening-cash" role="menuitem" onclick="openOpeningCash()" title="Set the bank balance as opening cash for the selected run">🏦 Opening Cash</button>
+          <div class="more-sep"></div>
+          <div id="more-user"></div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -376,5 +385,6 @@
 
 <div class="toast" id="toast"></div>
 <script src="/ui2/app.js?v=5"></script>
+<script src="/ui2/responsive.js?v=2"></script>
 </body>
 </html>

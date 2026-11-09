@@ -12,6 +12,19 @@ let activeTimeframe = 52;
 
 const SECTIONS = ["dashboard", "upload", "matrix", "config"];
 
+// Weekly x-axis: every week stays in the data, but only some get a label so the axis never crowds.
+// 13/26-week views label every week when there is room; the 52-week view labels every 2nd week on wide charts, every 4th on narrow ones.
+function weekTicks(size) {
+  return {
+    color: "#8c93a3", font: { family: "JetBrains Mono", size }, autoSkip: false, minRotation: 0, maxRotation: 60,
+    callback(value, index) {
+      const count = this.chart.data.labels.length, w = this.chart.width;
+      const step = count <= 14 ? 1 : count <= 27 ? (w > 500 ? 1 : 2) : (w > 800 ? 2 : 4);
+      return index % step === 0 ? this.getLabelForValue(value) : "";
+    },
+  };
+}
+
 function showSection(name) {
   SECTIONS.forEach((s) => {
     const sec = document.getElementById(`section-${s}`);
@@ -248,7 +261,7 @@ async function renderReceiptsOutlook(runId, limit) {
       plugins: { legend: { display: false }, tooltip: { filter: (it) => !it.dataset.hideTip,
         callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${fmtMoney(ctx.parsed.y)}` } } },
       scales: {
-        x: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 10 }, autoSkip: false, minRotation: 0, maxRotation: 60 } },
+        x: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: weekTicks(10) },
         y: { grid: { color: "rgba(255,255,255,0.06)" }, ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 10 }, callback: (v) => fmtMoney(v) } },
       },
     },
@@ -331,7 +344,7 @@ function renderCharts(analytics, limit = 52) {
         scales: {
           x: {
             grid: { color: "rgba(255, 255, 255, 0.06)" },
-            ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 10 }, autoSkip: false, minRotation: 0, maxRotation: 60 },
+            ticks: weekTicks(10),
           },
           y: {
             grid: { color: "rgba(255, 255, 255, 0.06)" },
@@ -421,7 +434,7 @@ function renderCharts(analytics, limit = 52) {
         scales: {
           x: {
             grid: { color: "rgba(255, 255, 255, 0.06)" },
-            ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 10 }, autoSkip: false, minRotation: 0, maxRotation: 60 },
+            ticks: weekTicks(10),
           },
           y: {
             grid: { color: "rgba(255, 255, 255, 0.06)" },
@@ -479,7 +492,7 @@ function renderCharts(analytics, limit = 52) {
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 9 }, autoSkip: false, minRotation: 0, maxRotation: 60 },
+            ticks: weekTicks(9),
           },
           y: {
             grid: { color: "rgba(255, 255, 255, 0.06)" },
@@ -530,7 +543,7 @@ function renderCharts(analytics, limit = 52) {
         x: {
           stacked: true,
           grid: { display: false },
-          ticks: { color: "#8c93a3", font: { family: "JetBrains Mono", size: 9 }, autoSkip: false, minRotation: 0, maxRotation: 60 },
+          ticks: weekTicks(9),
         },
         y: {
           stacked: true,
