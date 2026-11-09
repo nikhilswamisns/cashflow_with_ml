@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
@@ -171,6 +171,25 @@ static2_dir = Path(__file__).parent.parent / 'static_v2'
 @app.get('/ui2/index.html', include_in_schema=False)
 def dashboard2():
     return _dashboard_html(static2_dir, '/ui2', skip=('ml.js',))   # /ui2 has no Payment Timing (ML) tab
+
+
+# The React dashboard (frontend/, built to frontend/dist) is served at /ui3/. /ui and /ui2 are untouched.
+ui3_dir = Path(__file__).parent.parent / 'frontend' / 'dist'
+
+
+@app.get('/ui3', include_in_schema=False)
+@app.get('/ui3/{path:path}', include_in_schema=False)
+def dashboard3(path: str = ''):
+    """Real files (assets, fonts) are served as they are; any other path is a client-side route, so send index.html."""
+    target = (ui3_dir / path).resolve()
+    if path and target.is_file() and ui3_dir.resolve() in target.parents:
+        return FileResponse(target)
+    if Path(path).suffix:   # a missing asset must be a real 404, not the page
+        raise HTTPException(status_code=404)
+    index = ui3_dir / 'index.html'
+    if not index.exists():
+        raise HTTPException(status_code=404, detail='/ui3 is not built. Run: cd frontend && npm run build')
+    return FileResponse(index)
 
 
 if static_dir.exists():
