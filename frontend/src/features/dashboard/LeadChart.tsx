@@ -6,6 +6,7 @@ import { dlabel, fullDates, kfmt, usd } from '@/shared/format'
 import { alpha, useChartTokens, type Tokens } from '@/shared/chart/tokens'
 import { baseOptions, SANS } from '@/shared/chart/base'
 import { assumptionPlugin, assumptionStart } from '@/features/dashboard/assumption'
+import { actualValues, weekDates } from '@/features/dashboard/actual'
 type View = 'both' | 'rules' | 'ml'
 const RULES_IDX = 2
 
@@ -16,12 +17,12 @@ const lowPointPlugin = (t: Tokens): Plugin<'line'> => ({
     const meta = chart.getDatasetMeta(RULES_IDX)
     const ds = chart.data.datasets[RULES_IDX]
     if (!ds || meta.hidden) return
-    const data = ds.data as number[]
-    const i = data.indexOf(Math.min(...data))
+    const data = ds.data as (number | null)[] // history weeks before the forecast are null
+    const i = data.indexOf(Math.min(...data.filter((v): v is number => v != null)))
     const p = meta.data[i]
     if (!p) return
     const { ctx, chartArea } = chart
-    const txt = `Lowest ${kfmt(data[i])} · ${String(chart.data.labels?.[i] ?? '')}`
+    const txt = `Lowest ${kfmt(data[i] as number)} · ${String(chart.data.labels?.[i] ?? '')}`
     ctx.save()
     ctx.font = `500 12px ${SANS}`
     const w = ctx.measureText(txt).width + 18,
@@ -58,9 +59,13 @@ export function LeadChart({ d, mlPending, mlFailed }: { d: DashboardData; mlPend
   const showR = !hasMl || view !== 'ml',
     showM = hasMl && view !== 'rules'
   const floor = d.floor
+  const a = d.actuals
+  const pad = a ? a.historyWeeks : 0 // actual weeks shown before the forecast starts (context only)
+  const weeks = useMemo(() => (a ? weekDates(a.firstWeek, a.historyWeeks, n) : []), [a, n])
+  const act = useMemo(() => (a ? actualValues(weeks, a) : null), [a, weeks])
 
   const data = useMemo(() => {
-    const cut = (a: number[]) => a.slice(0, n)
+    const cut = (arr: number[]): (number | null)[] => [...Array<null>(pad).fill(null), ...arr.slice(0, n)]
     const fillGradient = (ctx: ScriptableContext<'line'>) => {
       const area = ctx.chart.chartArea
       if (!area) return undefined
@@ -70,7 +75,7 @@ export function LeadChart({ d, mlPending, mlFailed }: { d: DashboardData; mlPend
       return g
     }
     const chartData: ChartData<'line'> = {
-      labels: labels.slice(0, n),
+      labels: a ? weeks.map((w) => dlabel(w.slice(5))) : labels.slice(0, n),
       datasets: [
         {
           label: 'Range low',
@@ -120,7 +125,7 @@ export function LeadChart({ d, mlPending, mlFailed }: { d: DashboardData; mlPend
           : [
               {
                 label: 'Minimum cash floor',
-                data: new Array(n).fill(floor),
+                data: new Array(pad + n).fill(floor),
                 borderColor: t.floor,
                 borderWidth: 1.4,
                 borderDash: [3, 4],
@@ -129,14 +134,37 @@ export function LeadChart({ d, mlPending, mlFailed }: { d: DashboardData; mlPend
                 hideTip: true,
               },
             ]),
+        ...(act
+          ? [
+              {
+                label: 'Actual cash (Zoho books)',
+                data: act.values,
+                borderColor: t.inC,
+                backgroundColor: t.inC,
+                borderWidth: 2.8,
+                tension: 0.15,
+                spanGaps: false,
+                fill: false,
+                order: -1, // drawn on top of the forecast lines
+                pointRadius: act.values.map((v, i) => (v == null ? 0 : i === act.todayIdx ? 6 : 3.5)),
+                pointBackgroundColor: act.values.map((_, i) => (i === act.todayIdx ? t.surface : t.inC)),
+                pointBorderColor: t.inC,
+                pointBorderWidth: 2,
+                pointHoverRadius: 6,
+              },
+            ]
+          : []),
       ],
     }
     return chartData
-  }, [d, t, n, labels, showR, showM, floor])
+  }, [d, t, n, labels, showR, showM, floor, a, weeks, act, pad])
 
   const options = useMemo(() => baseOptions(t, { yTicks: 9 }), [t])
   const assumeFrom = useMemo(() => assumptionStart(d), [d])
-  const plugins = useMemo(() => [assumptionPlugin(t, assumeFrom), lowPointPlugin(t)], [t, assumeFrom])
+  const plugins = useMemo(
+    () => [assumptionPlugin(t, assumeFrom == null ? null : assumeFrom + pad), lowPointPlugin(t)],
+    [t, assumeFrom, pad],
+  )
 
   const minRules = Math.min(...d.cash_rules)
   const minI = d.cash_rules.indexOf(minRules)
@@ -206,6 +234,12 @@ export function LeadChart({ d, mlPending, mlFailed }: { d: DashboardData; mlPend
           <span>
             <i className="box" style={{ background: alpha(t.ml, 0.35) }} />
             Likely range (p10 to p90)
+          </span>
+        )}
+        {act && (
+          <span>
+            <i style={{ background: t.inC }} />
+            Actual cash (Zoho books); the hollow dot is today
           </span>
         )}
         {floor != null && (

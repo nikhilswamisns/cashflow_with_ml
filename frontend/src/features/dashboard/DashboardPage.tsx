@@ -3,6 +3,7 @@ import { useRun } from '@/features/runs/RunProvider'
 import { Kpis } from '@/features/dashboard/Kpis'
 import { FundingGap } from '@/features/dashboard/FundingGap'
 import { LeadChart } from '@/features/dashboard/LeadChart'
+import { AccuracyCard } from '@/features/dashboard/AccuracyCard'
 import { ReceiptsChart } from '@/features/dashboard/ReceiptsChart'
 import { ArApChart, InOutChart, StreamsChart } from '@/features/dashboard/OtherCharts'
 export function DashboardPage() {
@@ -28,6 +29,7 @@ export function DashboardPage() {
       <Kpis d={d} syncedLabel={run?.syncedLabel} />
       <LeadChart d={d} mlPending={mlPending} mlFailed={mlFailed} />
       <FundingGap d={d} />
+      <AccuracyCard />
       <ReceiptsChart d={d} pending={receiptsPending} />
       <section className="grid2">
         <ArApChart d={d} />

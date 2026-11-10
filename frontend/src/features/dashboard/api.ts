@@ -1,5 +1,5 @@
 import { api } from '@/shared/api'
-import type { KpiValues, MlTiming, Receipts } from '@/features/dashboard/types'
+import type { Actuals, KpiValues, MlTiming, Receipts, Track } from '@/features/dashboard/types'
 interface Analytics {
   labels: string[]
   cash_trajectory: number[]
@@ -32,3 +32,15 @@ export async function fetchReceipts(id: string): Promise<Receipts> {
   const o = await api<Outlook>(`/ml/runs/${id}/receipts-outlook`)
   return { docs: o.documents, runrate: o.run_rate, forecast: o.forecast_added }
 }
+
+interface ActualsResponse {
+  points: Actuals['points']
+  first_week: string
+  history_weeks: number
+}
+// reads Zoho on the server (cached there for 10 minutes); 503 when the server has no Zoho access
+export async function fetchActuals(id: string): Promise<Actuals> {
+  const a = await api<ActualsResponse>(`/ml/runs/${id}/actuals`)
+  return { points: a.points, firstWeek: a.first_week, historyWeeks: a.history_weeks }
+}
+export const fetchTrack = () => api<Track>('/ml/forecast-track')

@@ -10,6 +10,7 @@ const base: DashboardData = {
   rulesFromSavedRun: false,
   ml: null,
   receipts: null,
+  actuals: null,
   floor: null,
   ar: [],
   ap: [],
