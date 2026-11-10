@@ -447,8 +447,6 @@ async def auto_run_batch(
 
     exec_result = _execute_run(run_id)
     exec_result["detected_files"] = detected_files
-    from app.ml.track import record_in_background
-    record_in_background(run_id)   # keep this run's first weeks for the forecast-vs-actual comparison
     return exec_result
 
 
@@ -520,8 +518,6 @@ def _run_from_snapshot(snap: dict, target_date: date, source: str, label: str) -
     from app.output.zoho_archive import archive_snapshot
     folder = archive_snapshot(run_id, snap, target_date, source, label)
     result["archive_folder"] = str(folder) if folder else None
-    from app.ml.track import record_in_background
-    record_in_background(run_id)   # keep this run's first weeks for the forecast-vs-actual comparison
     return result
 
 

@@ -1,5 +1,5 @@
 import { api } from '@/shared/api'
-import type { Actuals, KpiValues, MlTiming, Receipts, Track } from '@/features/dashboard/types'
+import type { Actuals, KpiValues, MlTiming, Receipts } from '@/features/dashboard/types'
 interface Analytics {
   labels: string[]
   cash_trajectory: number[]
@@ -42,4 +42,3 @@ export async function fetchActuals(id: string): Promise<Actuals> {
   const a = await api<ActualsResponse>(`/ml/runs/${id}/actuals`)
   return { points: a.points, startDate: a.start_date }
 }
-export const fetchTrack = () => api<Track>('/ml/forecast-track')

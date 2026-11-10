@@ -163,35 +163,6 @@ def run_actuals(run_id: str):
     return {"run_id": run_id, "first_week": first.isoformat(), "start_date": start.isoformat(), **_actuals_or_503(fridays, start=start)}
 
 
-@router.get("/forecast-track")
-def forecast_track():
-    """Frozen near-term predictions (rules and ML) next to the actual cash, one row per completed week."""
-    from datetime import date
-    from app.ml import track
-    data = track.load()
-    weeks = sorted(data["weeks"])
-    today = date.today()
-    done = [date.fromisoformat(w) for w in weeks if date.fromisoformat(w) <= today]
-    actual = {p["date"]: p["balance"] for p in (_actuals_or_503(done)["points"] if done else []) if p["kind"] == "week_end"}
-    rows = []
-    for w in weeks:
-        p = data["weeks"][w]
-        a = actual.get(w)
-        row = {"week_ending": w, **{k: p.get(k) for k in ("rules", "ml", "p10", "p90", "run_created", "model_trained_at")}, "actual": a}
-        if a is not None:
-            row["gap_rules"] = round(a - p["rules"], 2)
-            row["gap_ml"] = round(a - p["ml"], 2) if p.get("ml") is not None else None
-            if row["gap_ml"] is not None:
-                row["closer"] = "ml" if abs(row["gap_ml"]) < abs(row["gap_rules"]) else "rules"
-        rows.append(row)
-    scored = [r for r in rows if r.get("gap_ml") is not None]
-    summary = {"weeks_scored": len(scored),
-               "avg_miss_rules": round(sum(abs(r["gap_rules"]) for r in scored) / len(scored), 2) if scored else None,
-               "avg_miss_ml": round(sum(abs(r["gap_ml"]) for r in scored) / len(scored), 2) if scored else None}
-    return {"rows": rows, "summary": summary, "horizon_weeks": data.get("horizon_weeks", track.HORIZON_WEEKS),
-            "rule": "Each week's prediction is the one made by the latest run created on or before that week's Monday."}
-
-
 @router.get("/runs/{run_id}/receipts-outlook")
 def receipts_outlook(run_id: str):
     """Weekly receipts in layers (booked documents, flat run-rate, ML revenue forecast addition). Read-only."""

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Bar, Chart, Line } from 'react-chartjs-2'
 import type { ChartData, Plugin } from 'chart.js'
+import { RangeToggle } from '@/features/dashboard/RangeToggle'
 import { assumptionPlugin, assumptionStart } from '@/features/dashboard/assumption'
 import type { DashboardData } from '@/features/dashboard/types'
 import { dlabel } from '@/shared/format'
@@ -8,14 +9,15 @@ import { alpha, useChartTokens } from '@/shared/chart/tokens'
 import { baseOptions } from '@/shared/chart/base'
 export function ArApChart({ d }: { d: DashboardData }) {
   const t = useChartTokens()
-  const labels = useMemo(() => d.labels.map(dlabel), [d])
+  const [n, setN] = useState(13)
+  const labels = useMemo(() => d.labels.map(dlabel).slice(0, n), [d, n])
   const options = useMemo(() => baseOptions(t), [t])
   const data = {
     labels,
     datasets: [
       {
         label: 'Receivables (money to come in)',
-        data: d.ar,
+        data: d.ar.slice(0, n),
         borderColor: t.inC,
         backgroundColor: alpha(t.inC, 0.12),
         fill: true,
@@ -25,7 +27,7 @@ export function ArApChart({ d }: { d: DashboardData }) {
       },
       {
         label: 'Payables (money to pay out)',
-        data: d.ap,
+        data: d.ap.slice(0, n),
         borderColor: t.outC,
         backgroundColor: alpha(t.outC, 0.1),
         fill: true,
@@ -41,6 +43,9 @@ export function ArApChart({ d }: { d: DashboardData }) {
         <div>
           <h2>Receivables and payables</h2>
           <p className="sub">Customer money still to arrive vs vendor money still to pay out.</p>
+        </div>
+        <div className="controls">
+          <RangeToggle value={n} onChange={setN} />
         </div>
       </div>
       <div className="chart">
@@ -99,13 +104,7 @@ export function InOutChart({ d }: { d: DashboardData }) {
           <p className="sub">Receipts go up, payments go down. The line is the net for the week.</p>
         </div>
         <div className="controls">
-          <div className="seg" role="group" aria-label="Range">
-            {[13, 26, 52].map((k) => (
-              <button key={k} className={n === k ? 'on' : ''} aria-pressed={n === k} onClick={() => setN(k)}>
-                {k}w
-              </button>
-            ))}
-          </div>
+          <RangeToggle value={n} onChange={setN} />
         </div>
       </div>
       <div className="chart">
@@ -131,7 +130,8 @@ export function InOutChart({ d }: { d: DashboardData }) {
 
 export function StreamsChart({ d }: { d: DashboardData }) {
   const t = useChartTokens()
-  const labels = useMemo(() => d.labels.map(dlabel), [d])
+  const [n, setN] = useState(13)
+  const labels = useMemo(() => d.labels.map(dlabel).slice(0, n), [d, n])
   const options = useMemo(() => baseOptions(t, { stacked: true }), [t])
   const cols: Record<string, string> = { SERVPRO: t.s1, Amazon: t.s2, 'Other Resellers': t.s3, 'A/R Collection': t.s4 }
   const names = ['A/R Collection', 'SERVPRO', 'Other Resellers', 'Amazon'].filter((k) => d.streams[k])
@@ -139,7 +139,7 @@ export function StreamsChart({ d }: { d: DashboardData }) {
     labels,
     datasets: names.map((k) => ({
       label: k,
-      data: d.streams[k],
+      data: d.streams[k].slice(0, n),
       backgroundColor: cols[k],
       stack: 's',
       borderRadius: 1,
@@ -153,6 +153,9 @@ export function StreamsChart({ d }: { d: DashboardData }) {
         <div>
           <h2>Where revenue comes from</h2>
           <p className="sub">Weekly inflows by source.</p>
+        </div>
+        <div className="controls">
+          <RangeToggle value={n} onChange={setN} />
         </div>
       </div>
       <div className="chart">

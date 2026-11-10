@@ -34,25 +34,6 @@ export interface Actuals {
   points: ActualPoint[]
   startDate: string // ISO date the run was made
 }
-export interface TrackRow {
-  week_ending: string
-  rules: number
-  ml: number | null
-  p10: number | null
-  p90: number | null
-  actual: number | null
-  gap_rules?: number
-  gap_ml?: number | null
-  closer?: 'ml' | 'rules'
-  run_created: string
-}
-export interface Track {
-  rows: TrackRow[]
-  summary: { weeks_scored: number; avg_miss_rules: number | null; avg_miss_ml: number | null }
-  horizon_weeks: number
-  rule: string
-}
-
 export interface DashboardData {
   labels: string[] // week-ending Friday as "MM-DD"
   kpis: KpiValues

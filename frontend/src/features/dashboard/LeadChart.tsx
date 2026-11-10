@@ -5,6 +5,7 @@ import type { DashboardData } from '@/features/dashboard/types'
 import { dlabel, fullDates, kfmt, usd } from '@/shared/format'
 import { alpha, useChartTokens, type Tokens } from '@/shared/chart/tokens'
 import { baseOptions, SANS } from '@/shared/chart/base'
+import { RangeToggle } from '@/features/dashboard/RangeToggle'
 import { assumptionPlugin, assumptionStart } from '@/features/dashboard/assumption'
 import { actualValues, slotDates } from '@/features/dashboard/actual'
 type View = 'both' | 'rules' | 'ml'
@@ -209,13 +210,7 @@ export function LeadChart({
               ))}
             </div>
           )}
-          <div className="seg" role="group" aria-label="Range">
-            {[13, 26, 52].map((k) => (
-              <button key={k} className={n === k ? 'on' : ''} aria-pressed={n === k} onClick={() => setN(k)}>
-                {k}w
-              </button>
-            ))}
-          </div>
+          <RangeToggle value={n} onChange={setN} />
         </div>
       </div>
       {mlPending ? (
