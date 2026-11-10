@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
-import { ActionsCard } from './ActionsCard'
+import { ActionsPage } from './ActionsPage'
 import { newClient, stubApi } from '@/test/utils'
 
 vi.mock('@/features/runs/RunProvider', () => ({ useRun: () => ({ runId: 'r1' }) }))
@@ -15,8 +15,8 @@ const actions = {
   as_of: '2026-11-09',
   window_days: 14,
   invoices: {
-    count: 12,
-    total: 50000,
+    count: 2,
+    total: 20500,
     items: [{ number: 'INV-1', party: 'Acme', due_date: '2026-11-04', days_overdue: 5, amount: 20000 }],
   },
   bills: {
@@ -31,22 +31,22 @@ const actions = {
   },
 }
 
-describe('ActionsCard', () => {
-  it('shows overdue invoices with days late and bills with their status, plus the totals', async () => {
+describe('ActionsPage', () => {
+  it('shows the totals, overdue invoices with days late, and bills with their status', async () => {
     stubApi({ 'GET /runs/r1/actions': actions })
-    render(wrap(<ActionsCard />))
+    render(wrap(<ActionsPage />))
     expect(await screen.findByText('Acme')).toBeInTheDocument()
+    expect(screen.getByText('$20,500')).toBeInTheDocument() // overdue invoices tile
+    expect(screen.getByText('2 invoices to chase')).toBeInTheDocument()
+    expect(screen.getByText('1 bill past the due date')).toBeInTheDocument()
     expect(screen.getByText('5 days late')).toBeInTheDocument()
-    expect(screen.getByText('12 overdue · $50,000')).toBeInTheDocument()
     expect(screen.getByText('1 day late')).toBeInTheDocument()
     expect(screen.getByText('in 3 days')).toBeInTheDocument()
-    expect(screen.getByText(/2 due · \$3,500 · 1 already late \(\$500\)/)).toBeInTheDocument()
-    expect(screen.getByText('+ 11 more overdue')).toBeInTheDocument()
+    expect(screen.getByText('+ 1 more')).toBeInTheDocument() // 2 overdue invoices, 1 listed
   })
-  it('renders nothing for a run without stored open items', async () => {
+  it('says so when the run has no open items stored', async () => {
     stubApi({})
-    const { container } = render(wrap(<ActionsCard />))
-    await new Promise((r) => setTimeout(r, 50))
-    expect(container.querySelector('section')).toBeNull()
+    render(wrap(<ActionsPage />))
+    expect(await screen.findByText('No actions for this run')).toBeInTheDocument()
   })
 })

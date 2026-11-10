@@ -1,4 +1,12 @@
-import { Database, LayoutDashboard, SlidersHorizontal, Table2, TrendingUp, type LucideIcon } from 'lucide-react'
+import {
+  Database,
+  LayoutDashboard,
+  ListChecks,
+  SlidersHorizontal,
+  Table2,
+  TrendingUp,
+  type LucideIcon,
+} from 'lucide-react'
 
 export interface NavItem {
   to: string
@@ -18,6 +26,7 @@ export const NAV: NavGroup[] = [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/matrix', label: 'Cash forecast', icon: Table2 },
       { to: '/revenue', label: 'Revenue forecast', icon: TrendingUp },
+      { to: '/actions', label: 'Actions', icon: ListChecks },
     ],
   },
   {

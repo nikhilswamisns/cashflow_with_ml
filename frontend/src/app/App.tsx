@@ -13,6 +13,7 @@ const DashboardPage = lazy(() =>
 )
 const MatrixPage = lazy(() => import('@/features/matrix/MatrixPage').then((m) => ({ default: m.MatrixPage })))
 const RevenuePage = lazy(() => import('@/features/revenue/RevenuePage').then((m) => ({ default: m.RevenuePage })))
+const ActionsPage = lazy(() => import('@/features/actions/ActionsPage').then((m) => ({ default: m.ActionsPage })))
 const DataSyncPage = lazy(() => import('@/features/sync/DataSyncPage').then((m) => ({ default: m.DataSyncPage })))
 const AssumptionsPage = lazy(() =>
   import('@/features/config/AssumptionsPage').then((m) => ({ default: m.AssumptionsPage })),
@@ -36,6 +37,7 @@ function Pages() {
             <Route index element={<DashboardPage />} />
             <Route path="matrix" element={<MatrixPage />} />
             <Route path="revenue" element={<RevenuePage />} />
+            <Route path="actions" element={<ActionsPage />} />
             <Route path="data" element={<DataSyncPage />} />
             <Route path="assumptions" element={<AssumptionsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
