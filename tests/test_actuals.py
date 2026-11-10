@@ -28,4 +28,25 @@ def test_weekly_actuals_has_start_fridays_and_today_and_shares_one_ledger_fetch(
         ("2026-10-28", 750.0, "start"), ("2026-10-30", 750.0, "week_end"), ("2026-11-06", 750.0, "week_end"),
         ("2026-11-10", 1050.0, "today")]  # Nov 13 is in the future: no point
     actuals.weekly_actuals(fridays[:2], **args)        # another run, same day: no new Zoho ledger calls
-    assert calls == ["1", "2"]
+    assert sorted(calls) == ["1", "2"]
+
+
+def test_stale_data_is_served_at_once_and_refreshed_in_the_background(monkeypatch):
+    actuals.clear_cache()
+    today = date(2026, 11, 10)
+    actuals._STATE.update(at=1.0, since=date(2026, 10, 1), accounts=["x"], ledgers={})   # old, but covers what is asked
+    sync, bg = [], []
+    monkeypatch.setattr(actuals, "_refresh", lambda c, since: sync.append(since))
+    monkeypatch.setattr(actuals, "_background_refresh", lambda since: bg.append(since))
+    state = actuals._data(object(), date(2026, 10, 20), today)
+    assert state["accounts"] == ["x"] and not sync and len(bg) == 1     # nobody waits for Zoho
+
+
+def test_a_run_older_than_the_cached_ledger_triggers_a_real_read(monkeypatch):
+    actuals.clear_cache()
+    today = date(2026, 11, 10)
+    actuals._STATE.update(at=1e12, since=date(2026, 10, 10), accounts=[], ledgers={})  # fresh, but starts Oct 10
+    sync = []
+    monkeypatch.setattr(actuals, "_refresh", lambda c, since: sync.append(since))
+    actuals._data(object(), date(2026, 9, 1), today)
+    assert sync == [date(2026, 9, 1)]

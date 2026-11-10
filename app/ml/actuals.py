@@ -4,23 +4,23 @@ Zoho's account ledger (chartofaccounts/transactions) lists every posting with it
 and undoing the postings dated after a day gives that day's balance. It is the balance per today's books: entries
 posted late with an earlier date change the past, so recent weeks can still move until the books are reconciled.
 
-Zoho is slow (one call per page), so the account list and each account's ledger are fetched once and shared by every
-run and by the forecast-vs-actual table for TTL_SECONDS. The ledger is read from LOOKBACK_DAYS back, or further if a run needs it.
+Zoho is slow (one call per page), so the account list and the ledgers are read in parallel, once, and shared by every run
+for TTL_SECONDS (then refreshed in the background). The ledger is read from LOOKBACK_DAYS back, or further if a run needs it.
 """
 import json
 import logging
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 
 from app.ml import ROOT
 
 log = logging.getLogger(__name__)
 TTL_SECONDS = 600
-LOOKBACK_DAYS = 70
+LOOKBACK_DAYS = 35
 _lock = threading.Lock()
-_ACCOUNTS: list = [0.0, []]            # [fetched_at, accounts]
-_LEDGERS: dict[str, tuple] = {}        # account_id -> (fetched_at, since, rows)
+_STATE: dict = {"at": 0.0, "since": None, "accounts": [], "ledgers": {}, "refreshing": False}
 
 
 def _num(v) -> float:
@@ -48,12 +48,12 @@ def _ledger(client, account_id: str, since: date) -> list[dict]:
     rows = []
     for page in range(1, 40):
         batch, r = [], {}
-        for attempt in range(3):
+        for attempt in range(2):   # Zoho sometimes returns an empty page that is fine a moment later
             r = client.get("chartofaccounts/transactions", params={"account_id": account_id, "page": page})
             batch = r.get("transactions") or []
-            if batch or page > 1:
+            if batch:
                 break
-            time.sleep(0.6)
+            time.sleep(0.4)
         rows += batch
         more = (r.get("page_context") or {}).get("has_more_page")
         if not batch or not more or min(_day(t) for t in batch) < since.isoformat():
@@ -69,19 +69,50 @@ def _accounts(client) -> list[dict]:
     return [a for a in cash if (a["name"] or "").strip().lower() in wanted and a.get("account_id")]
 
 
-def _accounts_cached(client) -> list[dict]:
-    if time.time() - _ACCOUNTS[0] > TTL_SECONDS or not _ACCOUNTS[1]:
-        _ACCOUNTS[:] = [time.time(), _accounts(client)]
-    return _ACCOUNTS[1]
+def _refresh(client, since: date) -> None:
+    """Read the accounts and all their ledgers (in parallel: Zoho is one call per page) into the shared state."""
+    accounts = _accounts(client)
+    with ThreadPoolExecutor(max_workers=max(1, len(accounts))) as ex:
+        rows = list(ex.map(lambda a: _ledger(client, a["account_id"], since), accounts))
+    _STATE.update(at=time.time(), since=since, accounts=accounts,
+                  ledgers={a["account_id"]: r for a, r in zip(accounts, rows)})
 
 
-def _ledger_cached(client, account_id: str, since: date) -> list[dict]:
-    hit = _LEDGERS.get(account_id)
-    if hit and time.time() - hit[0] < TTL_SECONDS and hit[1] <= since:
-        return hit[2]
-    rows = _ledger(client, account_id, since)
-    _LEDGERS[account_id] = (time.time(), since, rows)
-    return rows
+def _background_refresh(since: date) -> None:
+    def work():
+        try:
+            from zoho.client import ZohoClient
+            _refresh(ZohoClient(), since)
+        except Exception as e:  # noqa: BLE001 - keep serving the older data
+            log.warning("actuals refresh failed: %s", e)
+        finally:
+            _STATE["refreshing"] = False
+    _STATE["refreshing"] = True
+    threading.Thread(target=work, daemon=True, name="actuals-refresh").start()
+
+
+def _data(client, need_since: date, today: date) -> dict:
+    """Shared Zoho data covering `need_since`. Once it is older than TTL_SECONDS it is still served at once while a
+    background refresh runs, so a visitor never waits for Zoho after the first load."""
+    with _lock:
+        covers = _STATE["since"] is not None and _STATE["since"] <= need_since
+        if covers and time.time() - _STATE["at"] < TTL_SECONDS:
+            return _STATE
+        if covers:
+            if not _STATE["refreshing"]:
+                _background_refresh(min(need_since, today - timedelta(days=LOOKBACK_DAYS)))
+            return _STATE
+        _refresh(client, min(need_since, today - timedelta(days=LOOKBACK_DAYS)))
+        return _STATE
+
+
+def warm(client=None) -> None:
+    """Fill the shared data at server start so the first dashboard load does not wait for Zoho."""
+    today = date.today()
+    if client is None:
+        from zoho.client import ZohoClient
+        client = ZohoClient()
+    _data(client, today - timedelta(days=LOOKBACK_DAYS), today)
 
 
 def weekly_actuals(fridays: list[date], today: date | None = None, client=None, start: date | None = None) -> dict:
@@ -92,15 +123,13 @@ def weekly_actuals(fridays: list[date], today: date | None = None, client=None, 
     if client is None:
         from zoho.client import ZohoClient
         client = ZohoClient()
-    since = min([today - timedelta(days=LOOKBACK_DAYS)] + days)
+    state = _data(client, min(days + [today]), today)
     totals = {d: 0.0 for d in days}
     now_total = 0.0
-    with _lock:   # one Zoho fetch at a time; concurrent requests then find the cache filled
-        for acct in _accounts_cached(client):
-            rows = _ledger_cached(client, acct["account_id"], since)
-            for d, v in rebuild(acct["balance"], rows, days).items():
-                totals[d] += v
-            now_total += acct["balance"]
+    for acct in state["accounts"]:
+        for d, v in rebuild(acct["balance"], state["ledgers"].get(acct["account_id"], []), days).items():
+            totals[d] += v
+        now_total += acct["balance"]
     pts = []
     if start and start in totals:
         pts.append({"date": start.isoformat(), "balance": round(totals[start], 2), "kind": "start"})
@@ -112,5 +141,4 @@ def weekly_actuals(fridays: list[date], today: date | None = None, client=None, 
 
 
 def clear_cache() -> None:
-    _ACCOUNTS[:] = [0.0, []]
-    _LEDGERS.clear()
+    _STATE.update(at=0.0, since=None, accounts=[], ledgers={}, refreshing=False)

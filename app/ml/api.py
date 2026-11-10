@@ -230,4 +230,9 @@ def warm_caches(limit: int = 3) -> None:
                     fn(r["run_id"])
                 except Exception as e:  # noqa: BLE001 - warming is best effort
                     logging.getLogger(__name__).info("warm %s for %s skipped: %s", fn.__name__, r["run_id"][:8], e)
+        try:
+            from app.ml.actuals import warm
+            warm()
+        except Exception as e:  # noqa: BLE001 - no Zoho access on this machine: the green line is simply hidden
+            logging.getLogger(__name__).info("warm actuals skipped: %s", e)
     threading.Thread(target=work, daemon=True, name="warm-ml-caches").start()
