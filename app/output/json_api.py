@@ -407,6 +407,18 @@ def get_matrix(run_id: str):
     return json.loads(run["matrix_json"])
 
 
+@router.get("/runs/{run_id}/actions")
+def get_actions(run_id: str):
+    """Overdue invoices to chase and bills to pay (due within 14 days), from the open items stored with the run."""
+    from app.actions import build_actions, snapshot_date
+    from app.output.v10_adapter import get_run_snapshot
+    run = db.get_run(run_id)
+    snap = get_run_snapshot(run_id) if run else None
+    if snap is None:
+        raise HTTPException(status_code=404, detail="This run has no open invoices and bills stored with it.")
+    return {"run_id": run_id, **build_actions(snap, snapshot_date(snap, run))}
+
+
 @router.get("/runs/{run_id}/analytics")
 def get_analytics(run_id: str):
     run = db.get_run(run_id)

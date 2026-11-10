@@ -77,3 +77,56 @@
 .lead {
   display: block;
 }
+.act-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  align-items: baseline;
+  font-size: 14px;
+  font-weight: 650;
+  margin-bottom: 8px;
+}
+.act-head span {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.act-table-wrap {
+  overflow-x: auto;
+}
+.act-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.act-table th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+.act-table th:last-child,
+.act-table td.num {
+  text-align: right;
+}
+.act-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.act-table td.party {
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.act-table td.num {
+  font-family: 'Geist Mono Variable', monospace;
+  font-variant-numeric: tabular-nums;
+}
+.act-table td.late {
+  color: var(--neg);
+}

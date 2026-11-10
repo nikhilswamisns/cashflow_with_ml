@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { useQueries } from '@tanstack/react-query'
-import { fetchActuals, fetchAnalytics, fetchMl, fetchReceipts } from './api'
+import { useQueries, useQuery } from '@tanstack/react-query'
+import { fetchActions, fetchActuals, fetchAnalytics, fetchMl, fetchReceipts } from './api'
 import type { DashboardData } from '@/features/dashboard/types'
 // Three calls: analytics (fast), receipts (fast), compare (slow the first time). The page shows as soon as
 // analytics is in. The cash chart waits for compare, because the saved run's line can already be ML-timed.
@@ -49,3 +49,6 @@ export function useDashboard(runId: string) {
     receiptsPending: rc.isPending && on,
   }
 }
+
+export const useActions = (runId: string) =>
+  useQuery({ queryKey: ['actions', runId], queryFn: () => fetchActions(runId), enabled: !!runId, retry: false })
