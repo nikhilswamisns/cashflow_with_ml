@@ -163,8 +163,7 @@ def dashboard():
     return _dashboard_html(static_dir, '/ui')
 
 
-# The dashboard at /ui2/ is the React app (frontend/, built to frontend/dist). It replaced the older static_v2/ page,
-# which is kept in the repo but no longer served. Same API, same login. /ui/ (the original) is untouched.
+# The dashboard at /ui2/ is the React app (frontend/, built to frontend/dist). It replaced the earlier plain-JS page. Same API, same login. /ui/ (the original) is untouched.
 ui2_dir = Path(__file__).parent.parent / 'frontend' / 'dist'
 
 

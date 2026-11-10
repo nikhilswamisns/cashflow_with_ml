@@ -1,7 +1,7 @@
 # Gutster cash flow: `/ui2`
 
 React 19 + Vite + TypeScript. Built to `frontend/dist`; FastAPI serves it at `/ui2/` (see `app/main.py`).
-Same login and same API as `/ui`. It replaced the older `static_v2/` page at this URL. The server only needs the built files, not Node.
+Same login and same API as `/ui`. It replaced the earlier plain-JS page at this URL. The server only needs the built files, not Node.
 
 ```
 npm install
