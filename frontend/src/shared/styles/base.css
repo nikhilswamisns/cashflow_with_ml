@@ -61,7 +61,54 @@ button {
   border-color: var(--border-strong);
   color: var(--text);
 }
+/* hover label: any element with data-tip */
+[data-tip] {
+  position: relative;
+}
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 80;
+}
+[data-tip].tip-end:hover::after,
+[data-tip].tip-end:focus-visible::after {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+.icon-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (min-width: 901px) {
+  .show-small {
+    display: none;
+  }
+}
 @media (max-width: 900px) {
+  .hide-small {
+    display: none;
+  }
   body.nav-open .rail {
     transform: none;
   }

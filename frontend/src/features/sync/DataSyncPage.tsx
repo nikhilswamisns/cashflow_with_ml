@@ -1,8 +1,6 @@
 import { useRef, useState, type DragEvent } from 'react'
-import { CheckCircle2, CircleAlert, FileUp, RefreshCw, Zap } from 'lucide-react'
-import { useQueryClient } from '@tanstack/react-query'
-import { autoRun, fetchZohoStatus, openArchive, quickDemo, runFromSnapshot } from '@/features/sync/api'
-import { useHealth } from '@/features/shell/hooks'
+import { CheckCircle2, CircleAlert, FileUp, RefreshCw } from 'lucide-react'
+import { autoRun, fetchZohoStatus } from '@/features/sync/api'
 import type { ZohoStatus } from '@/features/sync/types'
 import { useRun } from '@/features/runs/RunProvider'
 import { useSync } from './SyncProvider'
@@ -16,21 +14,18 @@ function fridayOnOrBefore(d = new Date()) {
 }
 
 export function DataSyncPage() {
-  const { runId, afterRun } = useRun()
+  const { afterRun } = useRun()
   const { sync, syncing } = useSync()
   const toast = useToast()
   const dismiss = useDismissToast()
-  const qc = useQueryClient()
-  const health = useHealth()
   const [zoho, setZoho] = useState<ZohoStatus | 'checking' | 'unknown' | null>(null)
   const [syncDate, setSyncDate] = useState(fridayOnOrBefore())
   const [files, setFiles] = useState<File[]>([])
   const [drag, setDrag] = useState(false)
   const [opening, setOpening] = useState('')
-  const [asOf, setAsOf] = useState('2026-08-14') // same default as /ui2
+  const [asOf, setAsOf] = useState(fridayOnOrBefore())
   const [busy, setBusy] = useState('')
   const fileIn = useRef<HTMLInputElement>(null)
-  const snapIn = useRef<HTMLInputElement>(null)
 
   async function checkZoho() {
     setZoho('checking')
@@ -69,93 +64,53 @@ export function DataSyncPage() {
     pick(e.dataTransfer.files)
   }
 
-  async function archive() {
-    try {
-      const j = await openArchive(runId)
-      toast(j.opened ? 'Archive folder opened.' : `Archive folder: ${j.folder}`, 'info', 8000)
-    } catch (e) {
-      toast((e as Error).message, 'error')
-    }
-  }
-
   return (
     <main className="page">
-      <section className="grid2">
-        <article className="card">
-          <div className="card-head tight">
-            <div>
-              <h2>Zoho Books</h2>
-              <p className="sub">Pull the latest data and build a new forecast run.</p>
-            </div>
-            <button className="btn" onClick={() => void checkZoho()} disabled={zoho === 'checking'}>
-              Check connection
-            </button>
+      <section className="card">
+        <div className="card-head tight">
+          <div>
+            <h2>Zoho Books</h2>
+            <p className="sub">Pull the latest data and build a new forecast run.</p>
           </div>
-          {zoho && (
-            <p className={`status-line ${zoho !== 'checking' && zoho !== 'unknown' && zoho.ok ? 'ok' : 'bad'}`}>
-              {zoho === 'checking' ? (
-                'Checking Zoho…'
-              ) : zoho === 'unknown' ? (
-                'Could not reach the forecast server.'
-              ) : zoho.ok ? (
-                <>
-                  <CheckCircle2 size={16} /> Zoho connected · {zoho.org_name || `org ${zoho.org_id}`}
-                </>
-              ) : (
-                <>
-                  <CircleAlert size={16} /> {zoho.message}
-                </>
-              )}
-            </p>
-          )}
-          <div className="oc-form">
-            <label>
-              Forecast week (a Friday)
-              <input type="date" value={syncDate} onChange={(e) => setSyncDate(e.target.value)} />
-            </label>
-            <div className="action-cell">
-              <button
-                className="btn primary"
-                disabled={syncing || !!busy}
-                onClick={() => void sync(syncDate || undefined)}
-              >
-                <RefreshCw size={16} /> {syncing ? 'Syncing…' : 'Sync from Zoho'}
-              </button>
-            </div>
-          </div>
-          <p className="fine">
-            Read-only on Zoho. Creates a new run and selects it. The date moves to the Friday on or before it.
+          <button className="btn" onClick={() => void checkZoho()} disabled={zoho === 'checking'}>
+            Check connection
+          </button>
+        </div>
+        {zoho && (
+          <p className={`status-line ${zoho !== 'checking' && zoho !== 'unknown' && zoho.ok ? 'ok' : 'bad'}`}>
+            {zoho === 'checking' ? (
+              'Checking Zoho…'
+            ) : zoho === 'unknown' ? (
+              'Could not reach the forecast server.'
+            ) : zoho.ok ? (
+              <>
+                <CheckCircle2 size={16} /> Zoho connected · {zoho.org_name || `org ${zoho.org_id}`}
+              </>
+            ) : (
+              <>
+                <CircleAlert size={16} /> {zoho.message}
+              </>
+            )}
           </p>
-        </article>
-
-        <article className="card">
-          <div className="card-head tight">
-            <div>
-              <h2>Server health</h2>
-              <p className="sub">Files and settings the dashboard needs.</p>
-            </div>
-            <button className="btn" onClick={() => void qc.invalidateQueries({ queryKey: ['health'] })}>
-              Re-check
+        )}
+        <div className="oc-form">
+          <label>
+            Forecast week (a Friday)
+            <input type="date" value={syncDate} onChange={(e) => setSyncDate(e.target.value)} />
+          </label>
+          <div className="action-cell">
+            <button
+              className="btn primary"
+              disabled={syncing || !!busy}
+              onClick={() => void sync(syncDate || undefined)}
+            >
+              <RefreshCw size={16} /> {syncing ? 'Syncing…' : 'Sync from Zoho'}
             </button>
           </div>
-          {health.isError && (
-            <p className="status-line bad">
-              <CircleAlert size={16} /> Health check could not be read.
-            </p>
-          )}
-          <ul className="health-list">
-            {(health.data?.checks ?? []).map((c) => (
-              <li key={c.name} className={c.ok ? 'ok' : c.required ? 'bad' : 'warn'}>
-                {c.ok ? <CheckCircle2 size={15} /> : <CircleAlert size={15} />}
-                <b>{c.name}</b>
-                <span>
-                  {c.detail}
-                  {!c.ok && c.fix ? `. ${c.fix}` : ''}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </article>
+        </div>
+        <p className="fine">
+          Read-only on Zoho. Creates a new run and selects it. The date moves to the Friday on or before it.
+        </p>
       </section>
 
       <section className="card">
@@ -237,61 +192,6 @@ export function DataSyncPage() {
               Generate 52-week forecast
             </button>
           </div>
-        </div>
-      </section>
-
-      <section className="card">
-        <div className="card-head">
-          <div>
-            <h2>Other ways to create or inspect a run</h2>
-          </div>
-        </div>
-        <div className="tool-row">
-          <div>
-            <b>Re-run from a saved snapshot</b>
-            <p className="sub">Rebuild a forecast from an archived Zoho snapshot file (.json).</p>
-          </div>
-          <button className="btn" disabled={!!busy} onClick={() => snapIn.current?.click()}>
-            <FileUp size={16} /> Choose snapshot
-          </button>
-          <input
-            ref={snapIn}
-            type="file"
-            accept=".json,application/json"
-            hidden
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              e.target.value = ''
-              if (f)
-                void create(
-                  'Re-running from the snapshot',
-                  () => runFromSnapshot(f),
-                  `Forecast rebuilt from ${f.name}.`,
-                )
-            }}
-          />
-        </div>
-        <div className="tool-row">
-          <div>
-            <b>Test with August 31 raw files</b>
-            <p className="sub">Same button as /ui2. The server currently answers it with a "disabled" message.</p>
-          </div>
-          <button
-            className="btn"
-            disabled={!!busy}
-            onClick={() => void create('Calculating the baseline', quickDemo, 'August 31 forecast executed cleanly!')}
-          >
-            <Zap size={16} /> Run baseline
-          </button>
-        </div>
-        <div className="tool-row">
-          <div>
-            <b>Zoho data folder for the selected run</b>
-            <p className="sub">Opens the archive folder if the server runs on your own PC; otherwise shows its path.</p>
-          </div>
-          <button className="btn" disabled={!runId} onClick={() => void archive()}>
-            Show archive folder
-          </button>
         </div>
       </section>
     </main>

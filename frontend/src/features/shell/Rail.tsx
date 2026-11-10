@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { MessageSquare } from 'lucide-react'
 import { useRun } from '@/features/runs/RunProvider'
+import { CHAT_ENABLED } from '@/features/chat/enabled'
 import { NAV } from './nav'
 export function Rail({ onAsk, onNavigate }: { onAsk: () => void; onNavigate: () => void }) {
   const { runs, run, selectRun } = useRun()
@@ -46,7 +47,7 @@ export function Rail({ onAsk, onNavigate }: { onAsk: () => void; onNavigate: () 
                 {label}
               </NavLink>
             ))}
-            {gi === 0 && (
+            {gi === 0 && CHAT_ENABLED && (
               <>
                 <div className="nav-label">Assistant</div>
                 <button className="nav-item" onClick={onAsk}>

@@ -233,37 +233,3 @@ button.nav-item {
   opacity: 0.5;
   pointer-events: none;
 }
-.health-banner {
-  margin: 16px 28px 0;
-  padding: 12px 40px 12px 16px;
-  border-radius: 10px;
-  font-size: 13px;
-  position: relative;
-  background: var(--warn-soft);
-  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
-  color: var(--text-2);
-}
-.health-banner.bad {
-  background: var(--neg-soft);
-  border-color: color-mix(in srgb, var(--neg) 45%, transparent);
-}
-.health-banner strong {
-  color: var(--text);
-}
-.health-banner ul {
-  margin: 6px 0 0 18px;
-}
-.health-banner button {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  background: none;
-  border: 0;
-  color: inherit;
-  display: grid;
-}
-@media (max-width: 700px) {
-  .health-banner {
-    margin: 12px 14px 0;
-  }
-}
