@@ -1,4 +1,7 @@
 import { render, screen } from '@testing-library/react'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
+import { newClient, stubApi } from '@/test/utils'
 import { Kpis } from './Kpis'
 import { FundingGap } from './FundingGap'
 import { assumptionStart } from './assumption'
@@ -55,16 +58,52 @@ describe('Kpis', () => {
   })
 })
 
+afterEach(() => vi.unstubAllGlobals())
+const withApp = (ui: React.ReactNode) => (
+  <QueryClientProvider client={newClient()}>
+    <MemoryRouter>{ui}</MemoryRouter>
+  </QueryClientProvider>
+)
+const loansReply = (credit_lines: number) => ({
+  facilities: [],
+  credit_lines,
+  limit: credit_lines ? 50000 : 0,
+  drawn: credit_lines ? 20000 : 0,
+  headroom: credit_lines ? 30000 : 0,
+  entered_repayments_per_month: 0,
+  entered_interest_per_month: 0,
+  in_forecast: { repayments_per_month: 13333, interest_per_month: 1250 },
+  note: '',
+})
+
 describe('FundingGap', () => {
   it('peak need is buffer minus the lowest cash, and counts weeks below zero', () => {
-    render(<FundingGap d={{ ...base, floor: 25 }} />)
+    stubApi({})
+    render(withApp(<FundingGap d={{ ...base, floor: 25 }} />))
     expect(screen.getByText('$75')).toBeInTheDocument()
     expect(screen.getByText('1')).toBeInTheDocument()
   })
   it('shows $0 and "no gap" when cash stays above the buffer', () => {
-    render(<FundingGap d={{ ...base, cash_rules: [100, 200, 300], floor: 50 }} />)
+    stubApi({})
+    render(withApp(<FundingGap d={{ ...base, cash_rules: [100, 200, 300], floor: 50 }} />))
     expect(screen.getByText('$0')).toBeInTheDocument()
     expect(screen.getByText(/No gap/)).toBeInTheDocument()
+  })
+})
+
+describe('Credit headroom tile', () => {
+  it('shows limit minus drawn across the credit lines', async () => {
+    stubApi({ 'GET /loans': loansReply(1) })
+    render(withApp(<FundingGap d={base} />))
+    expect(await screen.findByText('Credit headroom')).toBeInTheDocument()
+    expect(screen.getByText('$30,000')).toBeInTheDocument()
+    expect(screen.getByText('$20,000 drawn of $50,000 across 1 credit line.')).toBeInTheDocument()
+  })
+  it('invites you to add credit lines when none are entered', async () => {
+    stubApi({ 'GET /loans': loansReply(0) })
+    render(withApp(<FundingGap d={base} />))
+    expect(await screen.findByText(/No credit lines entered yet/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Add them' })).toHaveAttribute('href', '/assumptions?table=loans')
   })
 })
 

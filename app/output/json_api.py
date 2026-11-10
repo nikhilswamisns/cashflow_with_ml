@@ -627,6 +627,42 @@ def export_xlsx(run_id: str):
     )
 
 
+def _loans_file():
+    return CONFIG_DIR / "loans.json"
+
+
+def _loans_payload() -> dict:
+    from app.loans import summarize
+    try:
+        cfg = json.loads(_loans_file().read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        cfg = {"facilities": []}
+    try:
+        assumptions = json.loads((CONFIG_DIR / "assumptions.json").read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        assumptions = {}
+    return summarize(cfg, assumptions)
+
+
+@router.get("/loans")
+def get_loans():
+    """Loans and credit lines entered by hand, with headroom and what the cash forecast already carries. Display only."""
+    return _loans_payload()
+
+
+@router.put("/loans")
+def put_loans(body: dict):
+    from app.loans import validate
+    try:
+        clean = validate(body)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    tmp = _loans_file().with_suffix(".tmp")
+    tmp.write_text(json.dumps(clean, indent=2), encoding="utf-8")
+    tmp.replace(_loans_file())
+    return _loans_payload()
+
+
 @router.get("/config/{table}")
 def get_config(table: str):
     allowed = {"corporate_accounts", "freight_duty_vendors", "cc_category_coa_map", "assumptions", "coa_routing"}

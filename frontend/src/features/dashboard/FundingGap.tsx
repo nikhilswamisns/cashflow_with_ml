@@ -1,8 +1,11 @@
+import { Link } from 'react-router-dom'
 import type { DashboardData } from '@/features/dashboard/types'
+import { useLoans } from '@/features/loans/hooks'
 import { fullDates, usd } from '@/shared/format'
 
 /** Funding gap: how much extra cash is needed to stay above the buffer, and how many weeks cash is below zero. */
 export function FundingGap({ d }: { d: DashboardData }) {
+  const { data: loans } = useLoans()
   const buffer = d.floor ?? 0
   const dates = fullDates(d.labels, d.kpis.as_of ?? '')
   const lines: [string, number[]][] = [['rule-date line', d.cash_rules]]
@@ -30,7 +33,7 @@ export function FundingGap({ d }: { d: DashboardData }) {
     ],
   ]
   return (
-    <section className="kpis kpis-2">
+    <section className={`kpis ${loans ? 'kpis3' : 'kpis-2'}`}>
       {items.map(([l, v, c, n]) => (
         <div className="kpi" key={l}>
           <div className="kpi-label">{l}</div>
@@ -38,6 +41,24 @@ export function FundingGap({ d }: { d: DashboardData }) {
           <div className="kpi-note">{n}</div>
         </div>
       ))}
+      {loans && (
+        <div className="kpi">
+          <div className="kpi-label">Credit headroom</div>
+          <div className={`kpi-value ${loans.credit_lines && loans.headroom < 0 ? 'neg' : ''}`}>
+            {loans.credit_lines ? usd(loans.headroom) : '–'}
+          </div>
+          <div className="kpi-note">
+            {loans.credit_lines ? (
+              `${usd(loans.drawn)} drawn of ${usd(loans.limit)} across ${loans.credit_lines} credit ${loans.credit_lines === 1 ? 'line' : 'lines'}.`
+            ) : (
+              <>
+                No credit lines entered yet.{' '}
+                <Link to={{ pathname: '/assumptions', search: '?table=loans' }}>Add them</Link>.
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   )
 }

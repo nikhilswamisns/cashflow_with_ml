@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchConfig, saveConfig } from '@/features/config/api'
-import type { ConfigTable } from '@/features/config/types'
+import { useSearchParams } from 'react-router-dom'
+import type { ConfigTable, TableKey } from '@/features/config/types'
+import { LoansEditor } from '@/features/loans/LoansEditor'
+import { useLoans } from '@/features/loans/hooks'
 import { useToast } from '@/shared/toast'
 
-const TABLES: [ConfigTable, string][] = [
+const TABLES: [TableKey, string][] = [
   ['assumptions', 'Assumptions & Rules'],
+  ['loans', 'Loans & credit lines'],
   ['corporate_accounts', 'Corporate Accounts'],
   ['freight_duty_vendors', 'Freight & Duty Vendors'],
   ['cc_category_coa_map', 'Credit Card Category Map'],
@@ -13,11 +17,14 @@ const TABLES: [ConfigTable, string][] = [
 
 // Same as /ui2: the raw JSON of the server's config file, edited in place. Nothing is saved until you press the button.
 export function AssumptionsPage() {
-  const [table, setTable] = useState<ConfigTable>('assumptions')
+  const [params] = useSearchParams()
+  const [table, setTable] = useState<TableKey>(params.get('table') === 'loans' ? 'loans' : 'assumptions')
+  const loans = useLoans()
   // always re-read the file when you open a table: you are about to edit the live value
   const { data, error, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ['config', table],
-    queryFn: () => fetchConfig(table),
+    queryFn: () => fetchConfig(table as ConfigTable),
+    enabled: table !== 'loans',
     staleTime: 0,
     gcTime: 0,
   })
@@ -33,7 +40,7 @@ export function AssumptionsPage() {
           <select
             className="field"
             value={table}
-            onChange={(e) => setTable(e.target.value as ConfigTable)}
+            onChange={(e) => setTable(e.target.value as TableKey)}
             aria-label="Table"
           >
             {TABLES.map(([k, l]) => (
@@ -43,7 +50,15 @@ export function AssumptionsPage() {
             ))}
           </select>
         </div>
-        {error ? (
+        {table === 'loans' ? (
+          loans.data ? (
+            <LoansEditor key={loans.dataUpdatedAt} saved={loans.data} />
+          ) : loans.error ? (
+            <p className="insight warn">Loans could not be loaded: {loans.error.message}</p>
+          ) : (
+            <p className="sub">Loading…</p>
+          )
+        ) : error ? (
           <p className="insight warn">This table could not be loaded: {error.message}</p>
         ) : !data || (isFetching && !dataUpdatedAt) ? (
           <textarea
@@ -55,7 +70,11 @@ export function AssumptionsPage() {
             readOnly
           />
         ) : (
-          <JsonEditor key={`${table}:${dataUpdatedAt}`} table={table} initial={JSON.stringify(data, null, 2)} />
+          <JsonEditor
+            key={`${table}:${dataUpdatedAt}`}
+            table={table as ConfigTable}
+            initial={JSON.stringify(data, null, 2)}
+          />
         )}
       </section>
     </main>

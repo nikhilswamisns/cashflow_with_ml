@@ -27,3 +27,74 @@
 .config-footer .fine {
   margin: 0;
 }
+.loans-wrap {
+  overflow-x: auto;
+}
+.loans-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.loans-table th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 12px;
+  padding: 6px 6px;
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+.loans-table td {
+  padding: 6px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.loans-table td.num {
+  text-align: right;
+  font-family: 'Geist Mono Variable', monospace;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.loans-table td.neg {
+  color: var(--neg);
+}
+.loans-table .field {
+  width: 100%;
+  min-width: 90px;
+}
+.loans-table .field.num {
+  text-align: right;
+  min-width: 100px;
+}
+.loans-table td:first-child .field {
+  min-width: 170px;
+}
+.loans-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 18px 6px;
+}
+.loans-compare {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.loans-compare div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+.loans-compare b {
+  min-width: 190px;
+}
+.loans-compare span {
+  color: var(--text-2);
+}
+.loans-table td:nth-child(2) .field {
+  min-width: 135px; /* room for "Credit line" and "Term loan" */
+}
