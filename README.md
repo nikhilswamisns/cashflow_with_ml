@@ -24,7 +24,7 @@ Put these in the project folder before starting:
 - `ml_data/` (Zoho history workbook, only for the ML scripts in `ml_work/`)
 
 Setup: `pip install -r requirements-dev.txt`, create a login with `python tools/add_user.py`, then start the server
-(section 1). The dashboard is at `/ui/` and the restyled one at `/ui2/`.
+(section 1). The original dashboard is at `/ui/`; the current React dashboard is at `/ui2/` (source in `frontend/`, built to `frontend/dist`; the older `static_v2/` page is no longer served).
 
 ---
 

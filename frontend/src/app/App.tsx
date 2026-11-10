@@ -51,7 +51,7 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <ToastProvider>
-          <BrowserRouter basename="/ui3">
+          <BrowserRouter basename="/ui2">
             <RunProvider>
               <SyncProvider>
                 <Pages />

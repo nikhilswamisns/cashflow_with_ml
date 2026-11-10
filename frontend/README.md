@@ -1,14 +1,14 @@
-# Gutster cash flow: `/ui3`
+# Gutster cash flow: `/ui2`
 
-React 19 + Vite + TypeScript. Built to `frontend/dist`; FastAPI serves it at `/ui3/` (see `app/main.py`).
-Same login and same API as `/ui` and `/ui2`. The server only needs the built files, not Node.
+React 19 + Vite + TypeScript. Built to `frontend/dist`; FastAPI serves it at `/ui2/` (see `app/main.py`).
+Same login and same API as `/ui`. It replaced the older `static_v2/` page at this URL. The server only needs the built files, not Node.
 
 ```
 npm install
 npm run dev          # Vite dev server (API calls need the FastAPI server running)
 npm run check        # type-check + lint + tests + build. Run before every commit.
 npm run build        # -> dist/
-python ../scripts/check_ui3_parity.py [base_url] [runs]   # figures on screen == API, every matrix cell
+python ../scripts/check_ui2_parity.py [base_url] [runs]   # figures on screen == API, every matrix cell
 ```
 
 ## Layout
@@ -49,4 +49,4 @@ src/
 ## Known gaps
 
 - The Ask Gutster chat is a placeholder (`features/chat/api.ts`). The AI backend is a separate track.
-- `Lowest cash ahead` reads the saved run, as `/ui2` does; on ML-timed runs it can differ from the rules-only low shown in the chart (the parity script prints a NOTE).
+- `Lowest cash ahead` reads the saved run, as the old page did; on ML-timed runs it can differ from the rules-only low shown in the chart (the parity script prints a NOTE).

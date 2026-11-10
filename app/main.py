@@ -163,39 +163,28 @@ def dashboard():
     return _dashboard_html(static_dir, '/ui')
 
 
-# The restyled dashboard (static_v2/) lives beside the original at /ui2/. Same API, same login.
-static2_dir = Path(__file__).parent.parent / 'static_v2'
+# The dashboard at /ui2/ is the React app (frontend/, built to frontend/dist). It replaced the older static_v2/ page,
+# which is kept in the repo but no longer served. Same API, same login. /ui/ (the original) is untouched.
+ui2_dir = Path(__file__).parent.parent / 'frontend' / 'dist'
 
 
-@app.get('/ui2/', include_in_schema=False)
-@app.get('/ui2/index.html', include_in_schema=False)
-def dashboard2():
-    return _dashboard_html(static2_dir, '/ui2', skip=('ml.js',))   # /ui2 has no Payment Timing (ML) tab
-
-
-# The React dashboard (frontend/, built to frontend/dist) is served at /ui3/. /ui and /ui2 are untouched.
-ui3_dir = Path(__file__).parent.parent / 'frontend' / 'dist'
-
-
-@app.get('/ui3', include_in_schema=False)
-@app.get('/ui3/{path:path}', include_in_schema=False)
-def dashboard3(path: str = ''):
+@app.get('/ui2', include_in_schema=False)
+@app.get('/ui2/{path:path}', include_in_schema=False)
+def dashboard2(path: str = ''):
     """Real files (assets, fonts) are served as they are; any other path is a client-side route, so send index.html."""
-    target = (ui3_dir / path).resolve()
-    if path and target.is_file() and ui3_dir.resolve() in target.parents:
+    target = (ui2_dir / path).resolve()
+    if path and target.is_file() and ui2_dir.resolve() in target.parents:
         return FileResponse(target)
     if Path(path).suffix:   # a missing asset must be a real 404, not the page
         raise HTTPException(status_code=404)
-    index = ui3_dir / 'index.html'
+    index = ui2_dir / 'index.html'
     if not index.exists():
-        raise HTTPException(status_code=404, detail='/ui3 is not built. Run: cd frontend && npm run build')
+        raise HTTPException(status_code=404, detail='/ui2 is not built. Run: cd frontend && npm run build')
     return FileResponse(index)
 
 
 if static_dir.exists():
     app.mount('/ui', StaticFiles(directory=str(static_dir), html=True), name='static')
-if static2_dir.exists():
-    app.mount('/ui2', StaticFiles(directory=str(static2_dir), html=True), name='static2')
 app.include_router(router, prefix='/api')
 from app.ml.api import router as ml_router
 app.include_router(ml_router, prefix='/api/ml')

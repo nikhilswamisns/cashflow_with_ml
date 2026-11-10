@@ -23,10 +23,10 @@ describe('api', () => {
   })
   it('sends the user to the login page on 401 (but not for the auth calls themselves)', async () => {
     stubApi({ 'GET /runs': new Response('{}', { status: 401 }), 'GET /auth/me': new Response('{}', { status: 401 }) })
-    const loc = { href: '', pathname: '/ui3/matrix' }
+    const loc = { href: '', pathname: '/ui2/matrix' }
     vi.stubGlobal('location', loc)
     await expect(api('/runs')).rejects.toBeInstanceOf(ApiError)
-    expect(loc.href).toBe('/login?next=%2Fui3%2Fmatrix')
+    expect(loc.href).toBe('/login?next=%2Fui2%2Fmatrix')
     loc.href = ''
     await expect(api('/auth/me')).rejects.toBeInstanceOf(ApiError)
     expect(loc.href).toBe('')

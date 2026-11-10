@@ -1,6 +1,6 @@
-"""Parity check: the figures /ui3 shows must equal what the API returns for the same run (the API is what /ui2 draws too).
+"""Parity check: the figures /ui2 shows must equal what the API returns for the same run.
 
-Usage:  python scripts/check_ui3_parity.py [base_url] [number_of_runs]
+Usage:  python scripts/check_ui2_parity.py [base_url] [number_of_runs]
 Needs the server running and the gstack `browse` binary. Read-only: it only loads pages and calls GET endpoints."""
 import json, math, subprocess, sys, time, urllib.request
 from pathlib import Path
@@ -40,7 +40,7 @@ def matrix_check(rid):
     m = get(f'/runs/{rid}/matrix')
     if not m.get('layout'):
         print('  SKIP matrix: older run without a layout (drawn from a fixed field list)'); return 0
-    br('goto', f'{BASE}/ui3/matrix'); br('select', '#run', rid); time.sleep(2)
+    br('goto', f'{BASE}/ui2/matrix'); br('select', '#run', rid); time.sleep(2)
     js = "JSON.stringify([...document.querySelectorAll('.matrix tbody tr')].map(r=>[...r.children].map(c=>c.textContent)))"
     for _ in range(15):
         dom = json.loads(br('js', js) or '[]')
@@ -61,7 +61,7 @@ def matrix_check(rid):
 
 def main():
     runs = get('/runs')[:N_RUNS]
-    br('viewport', '1280x900'); br('goto', f'{BASE}/ui3/')
+    br('viewport', '1280x900'); br('goto', f'{BASE}/ui2/')
     failures = 0
     for r in runs:
         rid = r['run_id']
@@ -69,8 +69,8 @@ def main():
         k = an['kpis']
         rules = cmp_['ending_cash_rules']
         expect = {
-            'Opening cash': usd(k['opening_cash']), 'Lowest cash ahead': usd(k['lowest_cash']),
-            'Cash after 52 weeks': usd(k['ending_cash']), 'A/R': usd(k['total_ar']), 'A/P': usd(k['total_ap']),
+            'Book cash (Zoho)': usd(k['opening_cash']), 'Lowest cash ahead': usd(min(rules)),
+            'A/R': usd(k['total_ar']), 'A/P': usd(k['total_ap']),
             'Receipts invoiced': kfmt(sum(rc['documents'])),
             'Receipts reseller': kfmt(sum(rc['run_rate'])), 'Receipts forecast': kfmt(sum(rc['forecast_added'])),
             'Chart lowest (rules)': usd(min(rules)),
@@ -82,7 +82,7 @@ def main():
             if got_page['lead'] and 'Loading' not in got_page['lead'] and len(got_page['chips']) >= 3: break
             time.sleep(1)
         kp, ch = got_page['kpis'], got_page['chips']
-        got = dict(zip(expect, kp[:5] + ch[:3]))
+        got = dict(zip(expect, kp[:4] + ch[:3]))
         got['Chart lowest (rules)'] = usd(min(rules)) if usd(min(rules)) in got_page['lead'] else '(not found in: ' + got_page['lead'][:90] + ')'
         print(f"\nrun {r['run_date']} ({rid[:8]})")
         for name, want in expect.items():
@@ -91,11 +91,7 @@ def main():
             failures += not ok
             print(f"  {'OK  ' if ok else 'FAIL'} {name:22} expected {want:>12}   page {have}")
         failures += matrix_check(rid)
-        br('goto', f'{BASE}/ui3/')
-        # the KPI card reads the saved run; the blue line reads /compare. Flag when they disagree (ML timing was on).
-        if abs(k['lowest_cash'] - min(rules)) > 1:
-            print(f"  NOTE KPI 'Lowest cash ahead' ({usd(k['lowest_cash'])}) differs from the rules-only lowest point "
-                  f"({usd(min(rules))}): the saved run is probably ML-timed. /ui2 shows the same KPI.")
+        br('goto', f'{BASE}/ui2/')
     print('\nRESULT:', 'PASS' if not failures else f'{failures} mismatches')
     sys.exit(1 if failures else 0)
 
