@@ -24,3 +24,15 @@ export const tickMoney = (n: number) => {
       : `${s}$${Math.round(a)}`
 }
 export const sum = (a: number[]) => a.reduce((x, y) => x + y, 0)
+
+/** "MM-DD" week labels carry no year. Walk them from the as-of date and roll the year over at December to January. */
+export const fullDates = (labels: string[], asOf: string): string[] => {
+  let y = +asOf.slice(0, 4) || new Date().getFullYear()
+  let prev = 0
+  return labels.map((s) => {
+    const m = +s.split('-')[0]
+    if (m < prev) y += 1
+    prev = m
+    return `${dlabel(s)}, ${y}`
+  })
+}

@@ -96,8 +96,11 @@ h2 {
 }
 .kpis {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+}
+.kpis.kpis-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .kpi {
   background: var(--surface);
@@ -169,13 +172,7 @@ h2 {
 }
 @media (max-width: 1180px) {
   .kpis {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-  .kpis .kpi {
-    grid-column: span 2;
-  }
-  .kpis .kpi:nth-child(n + 4) {
-    grid-column: span 3;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @media (max-width: 900px) {
@@ -195,11 +192,7 @@ h2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
-  .kpis .kpi,
-  .kpis .kpi:nth-child(n + 4) {
-    grid-column: auto;
-  }
-  .kpis .kpi:first-child {
+  .kpis:not(.kpis-2) .kpi:first-child {
     grid-column: 1 / -1;
   }
   .card {

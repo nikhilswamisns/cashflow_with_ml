@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react'
 import { Line } from 'react-chartjs-2'
 import type { Chart, ChartData, Plugin, ScriptableContext } from 'chart.js'
 import type { DashboardData } from '@/features/dashboard/types'
-import { dlabel, kfmt, usd } from '@/shared/format'
+import { dlabel, fullDates, kfmt, usd } from '@/shared/format'
 import { alpha, useChartTokens, type Tokens } from '@/shared/chart/tokens'
 import { baseOptions, SANS } from '@/shared/chart/base'
+import { assumptionPlugin, assumptionStart } from '@/features/dashboard/assumption'
 type View = 'both' | 'rules' | 'ml'
 const RULES_IDX = 2
 
@@ -50,8 +51,9 @@ const lowPointPlugin = (t: Tokens): Plugin<'line'> => ({
 export function LeadChart({ d, mlPending, mlFailed }: { d: DashboardData; mlPending: boolean; mlFailed: boolean }) {
   const t = useChartTokens()
   const [view, setView] = useState<View>('both')
-  const [n, setN] = useState(52)
+  const [n, setN] = useState(13)
   const labels = useMemo(() => d.labels.map(dlabel), [d])
+  const dates = useMemo(() => fullDates(d.labels, d.kpis.as_of ?? ''), [d])
   const hasMl = !!d.ml
   const showR = !hasMl || view !== 'ml',
     showM = hasMl && view !== 'rules'
@@ -133,7 +135,8 @@ export function LeadChart({ d, mlPending, mlFailed }: { d: DashboardData; mlPend
   }, [d, t, n, labels, showR, showM, floor])
 
   const options = useMemo(() => baseOptions(t, { yTicks: 9 }), [t])
-  const plugins = useMemo(() => [lowPointPlugin(t)], [t])
+  const assumeFrom = useMemo(() => assumptionStart(d), [d])
+  const plugins = useMemo(() => [assumptionPlugin(t, assumeFrom), lowPointPlugin(t)], [t, assumeFrom])
 
   const minRules = Math.min(...d.cash_rules)
   const minI = d.cash_rules.indexOf(minRules)
@@ -166,7 +169,7 @@ export function LeadChart({ d, mlPending, mlFailed }: { d: DashboardData; mlPend
             </div>
           )}
           <div className="seg" role="group" aria-label="Range">
-            {[52, 26, 13].map((k) => (
+            {[13, 26, 52].map((k) => (
               <button key={k} className={n === k ? 'on' : ''} aria-pressed={n === k} onClick={() => setN(k)}>
                 {k}w
               </button>
@@ -212,6 +215,12 @@ export function LeadChart({ d, mlPending, mlFailed }: { d: DashboardData; mlPend
           </span>
         )}
       </div>
+      {assumeFrom != null && assumeFrom < n && (
+        <p className="insight">
+          From the week ending <b>{dates[assumeFrom]}</b> no known invoice or bill is left, so both lines use the same
+          flat run-rate. Treat the grey weeks as an assumption.
+        </p>
+      )}
       {!mlPending && (
         <p className="insight">
           Cash is{' '}

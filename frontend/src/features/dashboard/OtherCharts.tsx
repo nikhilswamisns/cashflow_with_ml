@@ -1,5 +1,7 @@
-import { useMemo } from 'react'
-import { Bar, Line } from 'react-chartjs-2'
+import { useMemo, useState } from 'react'
+import { Bar, Chart, Line } from 'react-chartjs-2'
+import type { ChartData, Plugin } from 'chart.js'
+import { assumptionPlugin, assumptionStart } from '@/features/dashboard/assumption'
 import type { DashboardData } from '@/features/dashboard/types'
 import { dlabel } from '@/shared/format'
 import { alpha, useChartTokens } from '@/shared/chart/tokens'
@@ -50,26 +52,78 @@ export function ArApChart({ d }: { d: DashboardData }) {
 
 export function InOutChart({ d }: { d: DashboardData }) {
   const t = useChartTokens()
+  const [n, setN] = useState(13)
   const labels = useMemo(() => d.labels.map(dlabel), [d])
-  const options = useMemo(() => baseOptions(t), [t])
-  const bar = { borderRadius: 2, barPercentage: 0.8, categoryPercentage: 0.8 }
-  const data = {
-    labels,
-    datasets: [
-      { label: 'Money in', data: d.inflows, backgroundColor: t.inC, ...bar },
-      { label: 'Money out', data: d.outflows, backgroundColor: t.outC, ...bar },
-    ],
+  const from = useMemo(() => assumptionStart(d), [d])
+  const options = useMemo(() => {
+    const o = baseOptions(t)
+    if (o.scales?.x) o.scales.x.stacked = true
+    if (o.scales?.y) o.scales.y.stacked = true
+    return o
+  }, [t])
+  const plugins = useMemo(() => [assumptionPlugin(t, from)], [t, from])
+  const cut = (a: number[]) => a.slice(0, n)
+  const bar = {
+    type: 'bar' as const,
+    order: 1,
+    borderRadius: 2,
+    barPercentage: 0.7,
+    categoryPercentage: 0.8,
+    stack: 's',
   }
+  const data = {
+    labels: labels.slice(0, n),
+    datasets: [
+      { ...bar, label: 'Cash receipts', data: cut(d.inflows), backgroundColor: t.inC },
+      { ...bar, label: 'Cash payments', data: cut(d.outflows.map((v) => -v)), backgroundColor: t.outC },
+      {
+        type: 'line' as const,
+        label: 'Net (receipts − payments)',
+        data: cut(d.inflows.map((v, i) => v - (d.outflows[i] ?? 0))),
+        borderColor: t.text,
+        backgroundColor: t.text,
+        borderWidth: 2,
+        pointRadius: n <= 13 ? 3 : 0,
+        pointHoverRadius: 5,
+        tension: 0.25,
+        stack: 'net',
+        order: 0, // lower order draws on top of the bars
+      },
+    ],
+  } as unknown as ChartData<'bar'>
   return (
     <article className="card">
       <div className="card-head">
         <div>
-          <h2>Inflows and outflows</h2>
-          <p className="sub">Weekly money in vs money out.</p>
+          <h2>Cash receipts and cash payments</h2>
+          <p className="sub">Receipts go up, payments go down. The line is the net for the week.</p>
+        </div>
+        <div className="controls">
+          <div className="seg" role="group" aria-label="Range">
+            {[13, 26, 52].map((k) => (
+              <button key={k} className={n === k ? 'on' : ''} aria-pressed={n === k} onClick={() => setN(k)}>
+                {k}w
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       <div className="chart">
-        <Bar data={data} options={options} />
+        <Chart key={from ?? 'none'} type="bar" data={data} options={options} plugins={plugins as Plugin<'bar'>[]} />
+      </div>
+      <div className="legend">
+        <span>
+          <i className="box" style={{ background: t.inC }} />
+          Cash receipts
+        </span>
+        <span>
+          <i className="box" style={{ background: t.outC }} />
+          Cash payments
+        </span>
+        <span>
+          <i className="box" style={{ background: t.text }} />
+          Net for the week
+        </span>
       </div>
     </article>
   )

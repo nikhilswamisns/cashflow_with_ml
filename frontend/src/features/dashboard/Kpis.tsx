@@ -1,23 +1,24 @@
 import type { DashboardData } from '@/features/dashboard/types'
-import { dlabel, usd } from '@/shared/format'
-export function Kpis({ d }: { d: DashboardData }) {
+import { fullDates, usd } from '@/shared/format'
+
+const minOf = (a: number[]) => {
+  const v = Math.min(...a)
+  return { v, i: a.indexOf(v) }
+}
+
+export function Kpis({ d, syncedLabel }: { d: DashboardData; syncedLabel?: string }) {
   const k = d.kpis
-  const negWeeks = d.cash_rules.filter((v) => v < 0).length
-  const minI = d.cash_rules.indexOf(Math.min(...d.cash_rules))
+  const dates = fullDates(d.labels, k.as_of ?? '')
+  const low = minOf(d.cash_rules)
+  const line = d.rulesFromSavedRun ? 'saved run' : 'rule-date line'
   const items: [string, string, string, string][] = [
-    ['Opening cash', usd(k.opening_cash), '', 'Bank balance in Zoho at the last sync.'],
     [
-      'Lowest cash ahead',
-      usd(k.lowest_cash),
-      k.lowest_cash < 0 ? 'neg' : '',
-      `Week ending ${dlabel(d.labels[minI])}. Below zero for ${negWeeks} weeks.`,
+      'Book cash (Zoho)',
+      usd(k.opening_cash),
+      '',
+      `Zoho book balance${syncedLabel ? ` · ${syncedLabel.replace('Run created ', '').replace(/,.*/, '')}` : ''}`,
     ],
-    [
-      'Cash after 52 weeks',
-      usd(k.ending_cash),
-      'pos',
-      `${k.net_change >= 0 ? 'Up' : 'Down'} ${usd(Math.abs(k.net_change))} on today.`,
-    ],
+    ['Lowest cash ahead', usd(low.v), low.v < 0 ? 'neg' : '', `Week ending ${dates[low.i]} · ${line}`],
     ['Receivables (A/R)', usd(k.total_ar), '', 'Customers still owe you this.'],
     ['Payables (A/P)', usd(k.total_ap), '', `You owe vendors. A/R covers it ${(k.total_ar / k.total_ap).toFixed(2)}×.`],
   ]

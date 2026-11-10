@@ -31,7 +31,7 @@ function weekTicks(t: Tokens) {
         w = this.chart.width
       const step =
         count <= 14
-          ? w > 420
+          ? w > 640
             ? 1
             : 2
           : count <= 27
