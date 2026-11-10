@@ -18,6 +18,8 @@ def on_startup():
         print('\n  NO LOGIN USER SET UP. Create one with:  python tools\\add_user.py\n', flush=True)
     from app import health
     health.print_startup_report(LOCAL_NO_LOGIN)
+    from app.ml.api import warm_caches
+    warm_caches()   # slow ML results for the newest runs are computed in the background, not on the first page load
 from starlette.middleware.base import BaseHTTPMiddleware
 
 class NoCacheStaticMiddleware(BaseHTTPMiddleware):

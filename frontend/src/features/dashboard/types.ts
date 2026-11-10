@@ -27,13 +27,12 @@ export interface MlTiming {
 export interface ActualPoint {
   date: string // ISO date
   balance: number
-  kind: 'week_end' | 'today'
+  kind: 'start' | 'week_end' | 'today'
 }
-/** Actual cash from Zoho books: past Fridays (HISTORY_WEEKS before the run's first week too) plus today's balance. */
+/** Actual cash from Zoho books: the balance on the day the run was made, at each past Friday, and today. */
 export interface Actuals {
   points: ActualPoint[]
-  firstWeek: string // ISO date of the run's first week-ending Friday
-  historyWeeks: number
+  startDate: string // ISO date the run was made
 }
 export interface TrackRow {
   week_ending: string

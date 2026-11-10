@@ -27,7 +27,7 @@ export function DashboardPage() {
   return (
     <main className="page">
       <Kpis d={d} syncedLabel={run?.syncedLabel} />
-      <LeadChart d={d} mlPending={mlPending} mlFailed={mlFailed} />
+      <LeadChart d={d} mlPending={mlPending} mlFailed={mlFailed} startDate={run?.startDate} />
       <FundingGap d={d} />
       <AccuracyCard />
       <ReceiptsChart d={d} pending={receiptsPending} />

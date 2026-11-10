@@ -35,12 +35,11 @@ export async function fetchReceipts(id: string): Promise<Receipts> {
 
 interface ActualsResponse {
   points: Actuals['points']
-  first_week: string
-  history_weeks: number
+  start_date: string
 }
 // reads Zoho on the server (cached there for 10 minutes); 503 when the server has no Zoho access
 export async function fetchActuals(id: string): Promise<Actuals> {
   const a = await api<ActualsResponse>(`/ml/runs/${id}/actuals`)
-  return { points: a.points, firstWeek: a.first_week, historyWeeks: a.history_weeks }
+  return { points: a.points, startDate: a.start_date }
 }
 export const fetchTrack = () => api<Track>('/ml/forecast-track')

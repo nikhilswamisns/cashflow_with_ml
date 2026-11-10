@@ -6,19 +6,20 @@ import { dlabel, fullDates, kfmt, usd } from '@/shared/format'
 import { alpha, useChartTokens, type Tokens } from '@/shared/chart/tokens'
 import { baseOptions, SANS } from '@/shared/chart/base'
 import { assumptionPlugin, assumptionStart } from '@/features/dashboard/assumption'
-import { actualValues, weekDates } from '@/features/dashboard/actual'
+import { actualValues, slotDates } from '@/features/dashboard/actual'
 type View = 'both' | 'rules' | 'ml'
+const dates0 = (iso: string) => `${dlabel(iso.slice(5))}, ${iso.slice(0, 4)}`
 const RULES_IDX = 2
 
 // small label on the lowest point of the rules line
-const lowPointPlugin = (t: Tokens): Plugin<'line'> => ({
+const lowPointPlugin = (t: Tokens, skip: number): Plugin<'line'> => ({
   id: 'lowPoint',
   afterDatasetsDraw(chart: Chart<'line'>) {
     const meta = chart.getDatasetMeta(RULES_IDX)
     const ds = chart.data.datasets[RULES_IDX]
     if (!ds || meta.hidden) return
-    const data = ds.data as (number | null)[] // history weeks before the forecast are null
-    const i = data.indexOf(Math.min(...data.filter((v): v is number => v != null)))
+    const data = ds.data as number[]
+    const i = skip + data.slice(skip).indexOf(Math.min(...data.slice(skip))) // slot 0 is the opening cash, not a forecast week
     const p = meta.data[i]
     if (!p) return
     const { ctx, chartArea } = chart
@@ -49,7 +50,17 @@ const lowPointPlugin = (t: Tokens): Plugin<'line'> => ({
   },
 })
 
-export function LeadChart({ d, mlPending, mlFailed }: { d: DashboardData; mlPending: boolean; mlFailed: boolean }) {
+export function LeadChart({
+  d,
+  mlPending,
+  mlFailed,
+  startDate,
+}: {
+  d: DashboardData
+  mlPending: boolean
+  mlFailed: boolean
+  startDate?: string
+}) {
   const t = useChartTokens()
   const [view, setView] = useState<View>('both')
   const [n, setN] = useState(13)
@@ -60,12 +71,14 @@ export function LeadChart({ d, mlPending, mlFailed }: { d: DashboardData; mlPend
     showM = hasMl && view !== 'rules'
   const floor = d.floor
   const a = d.actuals
-  const pad = a ? a.historyWeeks : 0 // actual weeks shown before the forecast starts (context only)
-  const weeks = useMemo(() => (a ? weekDates(a.firstWeek, a.historyWeeks, n) : []), [a, n])
-  const act = useMemo(() => (a ? actualValues(weeks, a) : null), [a, weeks])
-
+  const first = d.kpis.as_of // ISO date of week 1
+  // slot 0 is the day the run was made: every line starts there, the forecast from the opening cash
+  const slots = useMemo(() => (startDate && first ? slotDates(startDate, first, n) : null), [startDate, first, n])
+  const pad = slots ? 1 : 0
+  const act = useMemo(() => (a && slots ? actualValues(slots, a) : null), [a, slots])
+  const opening = d.kpis.opening_cash
   const data = useMemo(() => {
-    const cut = (arr: number[]): (number | null)[] => [...Array<null>(pad).fill(null), ...arr.slice(0, n)]
+    const cut = (arr: number[]): number[] => (pad ? [opening, ...arr.slice(0, n)] : arr.slice(0, n))
     const fillGradient = (ctx: ScriptableContext<'line'>) => {
       const area = ctx.chart.chartArea
       if (!area) return undefined
@@ -75,7 +88,7 @@ export function LeadChart({ d, mlPending, mlFailed }: { d: DashboardData; mlPend
       return g
     }
     const chartData: ChartData<'line'> = {
-      labels: a ? weeks.map((w) => dlabel(w.slice(5))) : labels.slice(0, n),
+      labels: slots ? slots.map((w) => dlabel(w.slice(5))) : labels.slice(0, n),
       datasets: [
         {
           label: 'Range low',
@@ -157,12 +170,12 @@ export function LeadChart({ d, mlPending, mlFailed }: { d: DashboardData; mlPend
       ],
     }
     return chartData
-  }, [d, t, n, labels, showR, showM, floor, a, weeks, act, pad])
+  }, [d, t, n, labels, showR, showM, floor, slots, act, pad, opening])
 
   const options = useMemo(() => baseOptions(t, { yTicks: 9 }), [t])
   const assumeFrom = useMemo(() => assumptionStart(d), [d])
   const plugins = useMemo(
-    () => [assumptionPlugin(t, assumeFrom == null ? null : assumeFrom + pad), lowPointPlugin(t)],
+    () => [assumptionPlugin(t, assumeFrom == null ? null : assumeFrom + pad), lowPointPlugin(t, pad)],
     [t, assumeFrom, pad],
   )
 
@@ -249,6 +262,12 @@ export function LeadChart({ d, mlPending, mlFailed }: { d: DashboardData; mlPend
           </span>
         )}
       </div>
+      {slots && (
+        <p className="fine">
+          All lines start on {dates0(slots[0])}, the day this run was made, from its opening cash
+          {act ? '. Green is the actual cash since then.' : '.'}
+        </p>
+      )}
       {assumeFrom != null && assumeFrom < n && (
         <p className="insight">
           From the week ending <b>{dates[assumeFrom]}</b> no known invoice or bill is left, so both lines use the same

@@ -1,19 +1,26 @@
-"""Actual cash, read-only from Zoho: the opening-cash accounts' balance at the end of each past Friday.
+"""Actual cash, read-only from Zoho: the opening-cash accounts' balance at a run's start and at the end of each past Friday.
 
 Zoho's account ledger (chartofaccounts/transactions) lists every posting with its date. Starting from today's balance
 and undoing the postings dated after a day gives that day's balance. It is the balance per today's books: entries
 posted late with an earlier date change the past, so recent weeks can still move until the books are reconciled.
+
+Zoho is slow (one call per page), so the account list and each account's ledger are fetched once and shared by every
+run and by the forecast-vs-actual table for TTL_SECONDS. The ledger is read from LOOKBACK_DAYS back, or further if a run needs it.
 """
 import json
 import logging
+import threading
 import time
 from datetime import date, timedelta
 
 from app.ml import ROOT
 
 log = logging.getLogger(__name__)
-_CACHE: dict = {}
 TTL_SECONDS = 600
+LOOKBACK_DAYS = 70
+_lock = threading.Lock()
+_ACCOUNTS: list = [0.0, []]            # [fetched_at, accounts]
+_LEDGERS: dict[str, tuple] = {}        # account_id -> (fetched_at, since, rows)
 
 
 def _num(v) -> float:
@@ -40,11 +47,11 @@ def _ledger(client, account_id: str, since: date) -> list[dict]:
     """Ledger rows from `since` to now, newest first, 200 per page, with a retry (Zoho sometimes returns an empty page)."""
     rows = []
     for page in range(1, 40):
-        batch = []
+        batch, r = [], {}
         for attempt in range(3):
             r = client.get("chartofaccounts/transactions", params={"account_id": account_id, "page": page})
             batch = r.get("transactions") or []
-            if batch or page == 1 and attempt == 2:
+            if batch or page > 1:
                 break
             time.sleep(0.6)
         rows += batch
@@ -62,27 +69,48 @@ def _accounts(client) -> list[dict]:
     return [a for a in cash if (a["name"] or "").strip().lower() in wanted and a.get("account_id")]
 
 
-def weekly_actuals(fridays: list[date], today: date | None = None, client=None) -> dict:
-    """{'points': [{'date', 'balance', 'kind'}], 'as_of'}: one point per past Friday plus today's balance."""
+def _accounts_cached(client) -> list[dict]:
+    if time.time() - _ACCOUNTS[0] > TTL_SECONDS or not _ACCOUNTS[1]:
+        _ACCOUNTS[:] = [time.time(), _accounts(client)]
+    return _ACCOUNTS[1]
+
+
+def _ledger_cached(client, account_id: str, since: date) -> list[dict]:
+    hit = _LEDGERS.get(account_id)
+    if hit and time.time() - hit[0] < TTL_SECONDS and hit[1] <= since:
+        return hit[2]
+    rows = _ledger(client, account_id, since)
+    _LEDGERS[account_id] = (time.time(), since, rows)
+    return rows
+
+
+def weekly_actuals(fridays: list[date], today: date | None = None, client=None, start: date | None = None) -> dict:
+    """Points: the run's start (kind 'start'), each past Friday ('week_end') and today's balance ('today')."""
     today = today or date.today()
     past = sorted(f for f in set(fridays) if f <= today)
-    key = (tuple(past), today)
-    hit = _CACHE.get(key)
-    if hit and time.time() - hit[0] < TTL_SECONDS:
-        return hit[1]
+    days = sorted(set(past) | ({start} if start and start <= today else set()))
     if client is None:
         from zoho.client import ZohoClient
         client = ZohoClient()
-    since = (past[0] if past else today) - timedelta(days=1)
-    totals = {d: 0.0 for d in past + [today]}
-    for acct in _accounts(client):
-        rows = _ledger(client, acct["account_id"], since)
-        for d, v in rebuild(acct["balance"], rows, past).items():
-            totals[d] += v
-        totals[today] += acct["balance"]
-    pts = [{"date": d.isoformat(), "balance": round(totals[d], 2), "kind": "week_end"} for d in past]
+    since = min([today - timedelta(days=LOOKBACK_DAYS)] + days)
+    totals = {d: 0.0 for d in days}
+    now_total = 0.0
+    with _lock:   # one Zoho fetch at a time; concurrent requests then find the cache filled
+        for acct in _accounts_cached(client):
+            rows = _ledger_cached(client, acct["account_id"], since)
+            for d, v in rebuild(acct["balance"], rows, days).items():
+                totals[d] += v
+            now_total += acct["balance"]
+    pts = []
+    if start and start in totals:
+        pts.append({"date": start.isoformat(), "balance": round(totals[start], 2), "kind": "start"})
+    pts += [{"date": d.isoformat(), "balance": round(totals[d], 2), "kind": "week_end"} for d in past]
     if not past or today != past[-1]:
-        pts.append({"date": today.isoformat(), "balance": round(totals[today], 2), "kind": "today"})
-    result = {"points": pts, "as_of": today.isoformat(), "source": "Zoho ledger"}
-    _CACHE[key] = (time.time(), result)
-    return result
+        if start != today:
+            pts.append({"date": today.isoformat(), "balance": round(now_total, 2), "kind": "today"})
+    return {"points": pts, "as_of": today.isoformat(), "source": "Zoho ledger"}
+
+
+def clear_cache() -> None:
+    _ACCOUNTS[:] = [0.0, []]
+    _LEDGERS.clear()

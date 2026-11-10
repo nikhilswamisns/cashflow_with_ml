@@ -27,6 +27,7 @@ export async function fetchRuns(): Promise<RunInfo[]> {
     id: r.run_id,
     label: fmtDate(r.run_date),
     syncedLabel: `Run created ${fmtStamp(r.created_at)}`,
+    startDate: r.created_at.slice(0, 10),
   }))
 }
 

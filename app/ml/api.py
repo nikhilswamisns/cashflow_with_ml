@@ -10,8 +10,10 @@ from __future__ import annotations
 
 import copy
 import json
+import logging
 import shutil
 import tempfile
+import threading
 from pathlib import Path
 from typing import Optional
 
@@ -23,6 +25,7 @@ from app.ml.result_cache import ResultCache
 
 router = APIRouter(tags=["ml"])
 _compare_cache = ResultCache(size=8)
+_receipts_cache = ResultCache(size=8)
 
 
 @router.get("/status")
@@ -137,29 +140,27 @@ def _compute_compare(run_id: str, snap: dict):
             "lines_retimed": sorted(moved, key=lambda x: -abs(x["amount"] * x["shift_days"]))[:100]}
 
 
-HISTORY_WEEKS = 2   # actual weeks drawn before a run's first week, as context only
-
-
-def _actuals_or_503(fridays, today=None):
+def _actuals_or_503(fridays, today=None, start=None):
     from app.ml.actuals import weekly_actuals
     try:
-        return weekly_actuals(fridays, today)
+        return weekly_actuals(fridays, today, start=start)
     except Exception as e:  # noqa: BLE001 - no Zoho keys here, or Zoho is down: the dashboard just hides the green line
         raise HTTPException(503, f"Actual cash is not available on this server ({type(e).__name__}).")
 
 
 @router.get("/runs/{run_id}/actuals")
 def run_actuals(run_id: str):
-    """Actual cash (Zoho books, read-only) at the end of each past Friday of this run, HISTORY_WEEKS before its first
-    week for context, plus today's balance. Never later than today."""
-    from datetime import date, timedelta
+    """Actual cash (Zoho books, read-only) from the day this run was made (its start) to today: the balance at the start,
+    at the end of each past Friday, and today's balance. Never later than today."""
+    from datetime import date, datetime, timedelta
     from app import db
     run = db.get_run(run_id)
     if not run:
         raise HTTPException(404, "Run not found")
     first = date.fromisoformat(str(run["run_date"])[:10])
-    fridays = [first + timedelta(weeks=i) for i in range(-HISTORY_WEEKS, 52)]
-    return {"run_id": run_id, "first_week": first.isoformat(), "history_weeks": HISTORY_WEEKS, **_actuals_or_503(fridays)}
+    start = datetime.fromisoformat(run["created_at"]).date()
+    fridays = [first + timedelta(weeks=i) for i in range(52)]
+    return {"run_id": run_id, "first_week": first.isoformat(), "start_date": start.isoformat(), **_actuals_or_503(fridays, start=start)}
 
 
 @router.get("/forecast-track")
@@ -198,10 +199,20 @@ def receipts_outlook(run_id: str):
     from app.output.v10_adapter import forecast_for_run
     if not FORECAST_CSV.exists():
         raise HTTPException(404, "Forecast files not found. Run ml_work/05_calibrate_range.py first.")
-    f = forecast_for_run(run_id)
-    if f is None:
+    from app.ml.result_cache import _FILES_THAT_CHANGE_RESULTS, fingerprint
+    from app.output.v10_adapter import get_prior_snapshot, get_run_snapshot
+    from app import db
+    snap = get_run_snapshot(run_id)
+    if snap is None:
         raise HTTPException(404, "Run not found")
-    return {"run_id": run_id, **build_outlook(f)}
+    run = db.get_run(run_id) or {}
+    key = ("receipts", run_id, fingerprint(snap, get_prior_snapshot(run_id), run.get("opening_cash_amount"), run.get("opening_cash_date"),
+                                           files=[*_FILES_THAT_CHANGE_RESULTS, FORECAST_CSV]))
+
+    def build():
+        f = forecast_for_run(run_id)
+        return {"run_id": run_id, **build_outlook(f)}
+    return _receipts_cache.get_or_compute(key, build)
 
 
 @router.get("/revenue-forecast")
@@ -235,3 +246,17 @@ def revenue_forecast():
                         "low12": round(sum(f["low"] for f in forecast)), "high12": round(sum(f["high"] for f in forecast))},
             "accuracy": accuracy,
             "model": "Log-linear trend on the last 24 months (best of 12 models tested)"}
+
+
+def warm_caches(limit: int = 3) -> None:
+    """Compute the slow results (rules/ML comparison, receipts outlook) for the newest runs once, in the background,
+    so the first page load after a restart does not wait for them."""
+    def work():
+        from app import db
+        for r in db.list_runs()[:limit]:
+            for fn in (ml_compare, receipts_outlook):
+                try:
+                    fn(r["run_id"])
+                except Exception as e:  # noqa: BLE001 - warming is best effort
+                    logging.getLogger(__name__).info("warm %s for %s skipped: %s", fn.__name__, r["run_id"][:8], e)
+    threading.Thread(target=work, daemon=True, name="warm-ml-caches").start()
