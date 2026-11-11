@@ -419,6 +419,22 @@ def get_actions(run_id: str, limit: int = 200):
     return {"run_id": run_id, **build_actions(snap, snapshot_date(snap, run), limit=limit)}
 
 
+@router.get("/runs/{run_id}/working-capital")
+def get_working_capital(run_id: str):
+    """A/R and A/P aging, DSO / DPO and customer concentration. Open items come from the run's snapshot; the last-90-day
+    sales and COGS are read live from Zoho (cached) and are null when Zoho could not be read."""
+    from app.actions import snapshot_date
+    from app.output.v10_adapter import get_run_snapshot
+    from app.working_capital import build_working_capital
+    from app.zoho_flows import get_flows
+    run = db.get_run(run_id)
+    snap = get_run_snapshot(run_id) if run else None
+    if snap is None:
+        raise HTTPException(status_code=404, detail="This run has no open invoices and bills stored with it.")
+    as_of = snapshot_date(snap, run)  # the 90-day window ends the day the open items were read, so A/R and sales match
+    return {"run_id": run_id, **build_working_capital(snap, as_of, get_flows(today=as_of))}
+
+
 @router.get("/runs/{run_id}/analytics")
 def get_analytics(run_id: str):
     run = db.get_run(run_id)

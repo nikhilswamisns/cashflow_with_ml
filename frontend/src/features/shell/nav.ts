@@ -2,6 +2,7 @@ import {
   Database,
   LayoutDashboard,
   ListChecks,
+  Scale,
   SlidersHorizontal,
   Table2,
   TrendingUp,
@@ -27,6 +28,7 @@ export const NAV: NavGroup[] = [
       { to: '/matrix', label: 'Cash forecast', icon: Table2 },
       { to: '/revenue', label: 'Revenue forecast', icon: TrendingUp },
       { to: '/actions', label: 'Actions', icon: ListChecks },
+      { to: '/working-capital', label: 'Working capital', icon: Scale },
     ],
   },
   {

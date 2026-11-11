@@ -1,0 +1,52 @@
+.wc-bars {
+  display: grid;
+  gap: 10px;
+}
+.wc-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 84px 40px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.wc-label {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.wc-track {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--border);
+  overflow: hidden;
+}
+.wc-fill {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: var(--muted);
+}
+.wc-fill.late {
+  background: var(--neg);
+}
+.wc-amt,
+.wc-n {
+  text-align: right;
+  font-family: 'Geist Mono Variable', monospace;
+  font-variant-numeric: tabular-nums;
+}
+.wc-n {
+  color: var(--muted);
+}
+.wc-shares {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 12px;
+}
+@media (max-width: 700px) {
+  .wc-row {
+    grid-template-columns: 84px minmax(0, 1fr) 72px;
+  }
+  .wc-n {
+    display: none;
+  }
+}
