@@ -133,7 +133,7 @@ def weekly_actuals(fridays: list[date], today: date | None = None, client=None, 
     pts = []
     if start and start in totals:
         pts.append({"date": start.isoformat(), "balance": round(totals[start], 2), "kind": "start"})
-    pts += [{"date": d.isoformat(), "balance": round(totals[d], 2), "kind": "week_end"} for d in past]
+    pts += [{"date": d.isoformat(), "balance": round(totals[d], 2), "kind": "week_end"} for d in past if d != start]
     if not past or today != past[-1]:
         if start != today:
             pts.append({"date": today.isoformat(), "balance": round(now_total, 2), "kind": "today"})

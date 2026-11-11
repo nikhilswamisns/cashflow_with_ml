@@ -26,7 +26,7 @@ export function DashboardPage() {
   return (
     <main className="page">
       <Kpis d={d} syncedLabel={run?.syncedLabel} />
-      <LeadChart d={d} mlPending={mlPending} mlFailed={mlFailed} startDate={run?.startDate} />
+      <LeadChart d={d} mlPending={mlPending} mlFailed={mlFailed} />
       <FundingGap d={d} />
       <ReceiptsChart d={d} pending={receiptsPending} />
       <section className="grid2">

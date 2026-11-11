@@ -14,9 +14,12 @@ export function assumptionStart(d: DashboardData): number | null {
 }
 
 // grey band over the assumption weeks, drawn behind the lines
-export const assumptionPlugin = (t: Tokens, from: number | null): Plugin<'line'> => ({
+// `from` is the default start. A chart that stays alive (and keeps animating) can instead pass the current start as the
+// plugin option `assumptionZone: { from }`, which Chart.js refreshes on every update.
+export const assumptionPlugin = (t: Tokens, start: number | null = null): Plugin<'line'> => ({
   id: 'assumptionZone',
-  beforeDatasetsDraw(chart: Chart<'line'>) {
+  beforeDatasetsDraw(chart: Chart<'line'>, _args, opts: { from?: number | null }) {
+    const from = opts && 'from' in opts ? (opts.from ?? null) : start
     const count = chart.data.labels?.length ?? 0
     if (from == null || from >= count) return
     const { ctx, chartArea, scales } = chart

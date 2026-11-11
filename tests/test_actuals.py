@@ -50,3 +50,19 @@ def test_a_run_older_than_the_cached_ledger_triggers_a_real_read(monkeypatch):
     monkeypatch.setattr(actuals, "_refresh", lambda c, since: sync.append(since))
     actuals._data(object(), date(2026, 9, 1), today)
     assert sync == [date(2026, 9, 1)]
+
+
+def test_actuals_endpoint_asks_for_the_last_14_days_whatever_the_run_date(monkeypatch):
+    """A run made today (or long ago) still gets two weeks of history: the window follows today, not the run."""
+    import datetime as dt
+    from app.ml import api as ml_api
+    seen = {}
+    monkeypatch.setattr(ml_api, "_actuals_or_503", lambda fridays, today=None, start=None: seen.update(f=fridays, t=today, s=start) or {"points": []})
+    monkeypatch.setattr("app.db.get_run", lambda rid: {"run_id": rid})
+    class D(dt.date):
+        @classmethod
+        def today(cls): return cls(2026, 11, 11)
+    monkeypatch.setattr(dt, "date", D)
+    r = ml_api.run_actuals("x")
+    assert r["start_date"] == "2026-10-28" and seen["s"] == D(2026, 10, 28)
+    assert [f.isoformat() for f in seen["f"]][:2] == ["2026-10-30", "2026-11-06"]

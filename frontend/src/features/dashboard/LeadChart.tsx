@@ -7,20 +7,22 @@ import { alpha, useChartTokens, type Tokens } from '@/shared/chart/tokens'
 import { baseOptions, SANS } from '@/shared/chart/base'
 import { RangeToggle } from '@/features/dashboard/RangeToggle'
 import { assumptionPlugin, assumptionStart } from '@/features/dashboard/assumption'
-import { actualValues, slotDates } from '@/features/dashboard/actual'
+import { actualValues, buildSlots, latestPoint, onSlots, slotLabel, weekIsoDates } from '@/features/dashboard/actual'
 type View = 'both' | 'rules' | 'ml'
 const dates0 = (iso: string) => `${dlabel(iso.slice(5))}, ${iso.slice(0, 4)}`
 const RULES_IDX = 2
 
 // small label on the lowest point of the rules line
-const lowPointPlugin = (t: Tokens, skip: number): Plugin<'line'> => ({
+const lowPointPlugin = (t: Tokens): Plugin<'line'> => ({
   id: 'lowPoint',
-  afterDatasetsDraw(chart: Chart<'line'>) {
+  afterDatasetsDraw(chart: Chart<'line'>, _args, opts: { skip?: number }) {
+    const skip = opts?.skip ?? 0
     const meta = chart.getDatasetMeta(RULES_IDX)
     const ds = chart.data.datasets[RULES_IDX]
     if (!ds || meta.hidden) return
     const data = ds.data as number[]
-    const i = skip + data.slice(skip).indexOf(Math.min(...data.slice(skip))) // slot 0 is the opening cash, not a forecast week
+    const rest = data.slice(skip).filter((v) => v != null) // from today on: weeks already over are not part of the outlook
+    const i = data.indexOf(Math.min(...rest), skip)
     const p = meta.data[i]
     if (!p) return
     const { ctx, chartArea } = chart
@@ -55,12 +57,10 @@ export function LeadChart({
   d,
   mlPending,
   mlFailed,
-  startDate,
 }: {
   d: DashboardData
   mlPending: boolean
   mlFailed: boolean
-  startDate?: string
 }) {
   const t = useChartTokens()
   const [view, setView] = useState<View>('both')
@@ -72,14 +72,18 @@ export function LeadChart({
     showM = hasMl && view !== 'rules'
   const floor = d.floor
   const a = d.actuals
-  const first = d.kpis.as_of // ISO date of week 1
-  // slot 0 is the day the run was made: every line starts there, the forecast from the opening cash
-  const slots = useMemo(() => (startDate && first ? slotDates(startDate, first, n) : null), [startDate, first, n])
-  const pad = slots ? 1 : 0
-  const act = useMemo(() => (a && slots ? actualValues(slots, a) : null), [a, slots])
-  const opening = d.kpis.opening_cash
+  const isoWeeks = useMemo(() => weekIsoDates(d.labels, d.kpis.as_of ?? ''), [d])
+  const weeks = useMemo(() => isoWeeks.slice(0, n), [isoWeeks, n])
+  // every line starts at today's actual cash (the shared start point); weeks already over are drawn faint before it
+  const now = useMemo(() => (a ? latestPoint(a) : null), [a])
+  const { dates: slotDays, todayIdx } = useMemo(() => buildSlots(weeks, now?.date ?? null), [weeks, now])
+  const act = useMemo(() => (a ? actualValues(slotDays, a) : null), [a, slotDays])
   const data = useMemo(() => {
-    const cut = (arr: number[]): number[] => (pad ? [opening, ...arr.slice(0, n)] : arr.slice(0, n))
+    const cut = (arr: number[]): (number | null)[] => onSlots(arr, slotDays, weeks, todayIdx, now?.balance ?? null)
+    const over = (arr: number[]): (number | null)[] => cut(arr).map((v, i) => (todayIdx != null && i < todayIdx ? null : v)) // no band for weeks already over
+    const past = (color: string, faint: string) => ({
+      segment: { borderColor: (c: { p1DataIndex: number }) => (todayIdx != null && c.p1DataIndex <= todayIdx ? faint : color) },
+    })
     const fillGradient = (ctx: ScriptableContext<'line'>) => {
       const area = ctx.chart.chartArea
       if (!area) return undefined
@@ -89,11 +93,11 @@ export function LeadChart({
       return g
     }
     const chartData: ChartData<'line'> = {
-      labels: slots ? slots.map((w) => dlabel(w.slice(5))) : labels.slice(0, n),
+      labels: slotDays.map(slotLabel),
       datasets: [
         {
           label: 'Range low',
-          data: cut(d.ml?.p10 ?? []),
+          data: over(d.ml?.p10 ?? []),
           borderColor: 'transparent',
           pointRadius: 0,
           fill: false,
@@ -102,7 +106,7 @@ export function LeadChart({
         },
         {
           label: 'Likely range (ML timing)',
-          data: cut(d.ml?.p90 ?? []),
+          data: over(d.ml?.p90 ?? []),
           borderColor: 'transparent',
           backgroundColor: alpha(t.ml, 0.14),
           pointRadius: 0,
@@ -121,6 +125,7 @@ export function LeadChart({
           tension: 0.3,
           fill: true,
           hidden: !showR,
+          ...past(t.cash, alpha(t.cash, 0.3)),
         },
         {
           label: 'ML timing',
@@ -133,13 +138,14 @@ export function LeadChart({
           tension: 0.3,
           fill: false,
           hidden: !showM,
+          ...past(t.ml, alpha(t.ml, 0.3)),
         },
         ...(floor == null
           ? []
           : [
               {
                 label: 'Minimum cash floor',
-                data: new Array(pad + n).fill(floor),
+                data: new Array(slotDays.length).fill(floor),
                 borderColor: t.floor,
                 borderWidth: 1.4,
                 borderDash: [3, 4],
@@ -152,16 +158,16 @@ export function LeadChart({
           ? [
               {
                 label: 'Actual cash (Zoho books)',
-                data: act.values,
+                data: act,
                 borderColor: t.inC,
                 backgroundColor: t.inC,
                 borderWidth: 2.8,
                 tension: 0.15,
-                spanGaps: false,
+                spanGaps: true,
                 fill: false,
                 order: -1, // drawn on top of the forecast lines
-                pointRadius: act.values.map((v, i) => (v == null ? 0 : i === act.todayIdx ? 6 : 3.5)),
-                pointBackgroundColor: act.values.map((_, i) => (i === act.todayIdx ? t.surface : t.inC)),
+                pointRadius: act.map((v, i) => (v == null ? 0 : i === todayIdx ? 6 : 3.5)),
+                pointBackgroundColor: act.map((_, i) => (i === todayIdx ? t.surface : t.inC)),
                 pointBorderColor: t.inC,
                 pointBorderWidth: 2,
                 pointHoverRadius: 6,
@@ -171,13 +177,22 @@ export function LeadChart({
       ],
     }
     return chartData
-  }, [d, t, n, labels, showR, showM, floor, slots, act, pad, opening])
+  }, [d, t, showR, showM, floor, slotDays, weeks, todayIdx, now, act])
 
   const options = useMemo(() => baseOptions(t, { yTicks: 9 }), [t])
   const assumeFrom = useMemo(() => assumptionStart(d), [d])
-  const plugins = useMemo(
-    () => [assumptionPlugin(t, assumeFrom == null ? null : assumeFrom + pad), lowPointPlugin(t, pad)],
-    [t, assumeFrom, pad],
+  const assumeSlot = assumeFrom == null ? null : slotDays.indexOf(weeks[assumeFrom] ?? '')
+  // react-chartjs-2 reads `plugins` once, when the chart is created, but updates `options` on every render and animates
+  // the change. So the plugins are fixed and get the changing values (zone start, first outlook slot) as plugin options.
+  const plugins = useMemo(() => [assumptionPlugin(t), lowPointPlugin(t)], [t])
+  const zone = assumeSlot == null || assumeSlot < 0 ? null : assumeSlot
+  const chartOptions = useMemo(
+    () =>
+      ({
+        ...options,
+        plugins: { ...options.plugins, assumptionZone: { from: zone }, lowPoint: { skip: todayIdx ?? 0 } },
+      }) as typeof options,
+    [options, zone, todayIdx],
   )
 
   const minRules = Math.min(...d.cash_rules)
@@ -219,7 +234,7 @@ export function LeadChart({
         </div>
       ) : (
         <div className="chart tall">
-          <Line data={data} options={options} plugins={plugins} />
+          <Line data={data} options={chartOptions} plugins={plugins} />
         </div>
       )}
       {mlFailed && (
@@ -257,10 +272,10 @@ export function LeadChart({
           </span>
         )}
       </div>
-      {slots && (
+      {now && (
         <p className="fine">
-          All lines start on {dates0(slots[0])}, the day this run was made, from its opening cash
-          {act ? '. Green is the actual cash since then.' : '.'}
+          All lines start on {dates0(now.date)} at the actual cash in Zoho books. The faint line and green dots before it
+          are weeks that have already ended: what was forecast against what happened.
         </p>
       )}
       {assumeFrom != null && assumeFrom < n && (

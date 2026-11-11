@@ -148,19 +148,23 @@ def _actuals_or_503(fridays, today=None, start=None):
         raise HTTPException(503, f"Actual cash is not available on this server ({type(e).__name__}).")
 
 
+ACTUALS_LOOKBACK_DAYS = 14
+
+
 @router.get("/runs/{run_id}/actuals")
 def run_actuals(run_id: str):
-    """Actual cash (Zoho books, read-only) from the day this run was made (its start) to today: the balance at the start,
-    at the end of each past Friday, and today's balance. Never later than today."""
-    from datetime import date, datetime, timedelta
+    """Actual cash (Zoho books, read-only) for a rolling window: the balance LOOKBACK days ago (kind 'start'), at the end of
+    each Friday since then, and today's balance. The window follows today, not the run, so a run made today still shows
+    two weeks of history. Never later than today."""
+    from datetime import date, timedelta
     from app import db
-    run = db.get_run(run_id)
-    if not run:
+    if not db.get_run(run_id):
         raise HTTPException(404, "Run not found")
-    first = date.fromisoformat(str(run["run_date"])[:10])
-    start = datetime.fromisoformat(run["created_at"]).date()
-    fridays = [first + timedelta(weeks=i) for i in range(52)]
-    return {"run_id": run_id, "first_week": first.isoformat(), "start_date": start.isoformat(), **_actuals_or_503(fridays, start=start)}
+    today = date.today()
+    start = today - timedelta(days=ACTUALS_LOOKBACK_DAYS)
+    first_friday = start + timedelta(days=(4 - start.weekday()) % 7)
+    fridays = [first_friday + timedelta(weeks=i) for i in range(3)]
+    return {"run_id": run_id, "start_date": start.isoformat(), **_actuals_or_503(fridays, today, start=start)}
 
 
 @router.get("/runs/{run_id}/receipts-outlook")
