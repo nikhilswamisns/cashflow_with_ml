@@ -98,3 +98,81 @@
 .loans-table td:nth-child(2) .field {
   min-width: 135px; /* room for "Credit line" and "Term loan" */
 }
+
+/* Assumptions form. */
+.cfg-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.cfg-scalars {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px 18px;
+  margin-bottom: 18px;
+}
+.cfg-scalar {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  align-content: start;
+}
+.cfg-scalar > span:first-child {
+  font-weight: 600;
+}
+.cfg-scalar small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.cfg-scalar-in {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cfg-scalar-in .field {
+  flex: 1;
+}
+.cfg-scalar-in i {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.cfg-sec {
+  border-top: 1px solid var(--border);
+  padding: 12px 0 4px;
+}
+.cfg-sec summary {
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.cfg-sec summary .fine {
+  margin: 0;
+}
+.cfg-group h3 {
+  margin: 10px 0 4px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.cfg-table .field[type='date'] {
+  min-width: 140px;
+}
+.cfg-table td:first-child {
+  min-width: 190px;
+}
+.cfg-table td:first-child .field {
+  min-width: 190px;
+}
+.cfg-issue {
+  display: block;
+}
+.field[aria-invalid='true'] {
+  border-color: var(--neg);
+  outline: 1px solid var(--neg);
+}

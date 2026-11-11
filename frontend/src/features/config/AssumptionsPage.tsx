@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { fetchConfig, saveConfig } from '@/features/config/api'
+import { fetchConfig } from '@/features/config/api'
 import { useSearchParams } from 'react-router-dom'
 import type { ConfigTable, TableKey } from '@/features/config/types'
+import { ConfigForm } from '@/features/config/ConfigForm'
 import { LoansEditor } from '@/features/loans/LoansEditor'
 import { useLoans } from '@/features/loans/hooks'
-import { useToast } from '@/shared/toast'
 
 const TABLES: [TableKey, string][] = [
   ['assumptions', 'Assumptions & Rules'],
@@ -15,7 +15,7 @@ const TABLES: [TableKey, string][] = [
   ['cc_category_coa_map', 'Credit Card Category Map'],
 ]
 
-// Same as /ui2: the raw JSON of the server's config file, edited in place. Nothing is saved until you press the button.
+// Every table is a form with a Raw JSON view, except loans, which has its own editor. Nothing is saved until you press the button. Nothing is saved until you press the button.
 export function AssumptionsPage() {
   const [params] = useSearchParams()
   const [table, setTable] = useState<TableKey>(params.get('table') === 'loans' ? 'loans' : 'assumptions')
@@ -70,58 +70,9 @@ export function AssumptionsPage() {
             readOnly
           />
         ) : (
-          <JsonEditor
-            key={`${table}:${dataUpdatedAt}`}
-            table={table as ConfigTable}
-            initial={JSON.stringify(data, null, 2)}
-          />
+          <ConfigForm key={`${table}:${dataUpdatedAt}`} table={table} saved={data} />
         )}
       </section>
     </main>
-  )
-}
-
-/** Remounted (via key) whenever a table is loaded, so the text always starts from the server's copy. */
-function JsonEditor({ table, initial }: { table: ConfigTable; initial: string }) {
-  const toast = useToast()
-  const [text, setText] = useState(initial)
-  const [saving, setSaving] = useState(false)
-
-  async function save() {
-    let body: unknown
-    try {
-      body = JSON.parse(text)
-    } catch (e) {
-      toast('Error saving config: ' + (e as Error).message, 'error', 8000)
-      return
-    }
-    setSaving(true)
-    try {
-      await saveConfig(table, body)
-      toast('Configuration saved.', 'ok')
-    } catch (e) {
-      toast('Error saving config: ' + (e as Error).message, 'error', 8000)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <>
-      <textarea
-        className="json-editor"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        spellCheck={false}
-        aria-label="Configuration JSON"
-        rows={24}
-      />
-      <div className="config-footer">
-        <button className="btn primary" onClick={() => void save()} disabled={saving}>
-          {saving ? 'Saving…' : 'Save & Invalidate Cache'}
-        </button>
-        <span className="fine">Changes take effect immediately on the next run calculation.</span>
-      </div>
-    </>
   )
 }
