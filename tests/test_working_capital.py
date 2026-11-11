@@ -64,3 +64,14 @@ def test_zoho_reads_skip_draft_and_void_and_find_cogs():
         {"name": "Cost of Goods Sold", "total": 321.5, "account_transactions": [{"name": "COST OF GOODS SOLD", "total": 300}]}]}]}
     assert _cogs_from_report(report) == 321.5
     assert _cogs_from_report({"profit_and_loss": []}) is None
+
+
+def test_flows_fall_back_to_saved_snapshot(tmp_path, monkeypatch):
+    from datetime import date
+    from app import zoho_flows as z
+    monkeypatch.setattr(z, "SNAPSHOT_PATH", tmp_path / "s.json")
+    monkeypatch.setattr(z, "_CACHE", {})
+    z._save_snapshot({"sales": 100.0, "cogs": 50.0, "sales_by_customer": {"A": 100.0}})
+    monkeypatch.setattr(z, "read_flows", lambda c, t: (_ for _ in ()).throw(RuntimeError("zoho down")))
+    f = z.get_flows(client=object(), today=date(2026, 11, 1))
+    assert f["from_snapshot"] and f["sales"] == 100.0

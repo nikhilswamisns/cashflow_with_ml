@@ -36,20 +36,21 @@ const wc = {
   sales_90: 90000,
   cogs_90: null,
   flows_available: true,
+  flows_snapshot: null,
   concentration: { ar: shares, sales: null },
 }
 
 describe('WorkingCapitalPage', () => {
-  it('shows DSO, n/a for an unknown DPO, aging buckets and concentration', async () => {
+  it('shows DSO, a note for an unknown DPO, aging buckets and concentration', async () => {
     stubApi({ 'GET /runs/r1/working-capital': wc })
     render(wrap(<WorkingCapitalPage />))
     expect(await screen.findByText('45 days')).toBeInTheDocument()
-    expect(screen.getByText('n/a')).toBeInTheDocument()
+    expect(screen.getByText('No COGS in Zoho P&L')).toBeInTheDocument()
     expect(screen.getByText('$1,000')).toBeInTheDocument() // open A/R
-    expect(screen.getAllByText('61-90 days late').length).toBe(2)
+    expect(screen.getAllByText(/is not due yet|Nothing is late/).length).toBe(2)
     expect(screen.getAllByText('60%').length).toBeGreaterThan(0)
     expect(screen.getByText(/Zoho P&L has no Cost of Goods Sold/)).toBeInTheDocument()
-    expect(screen.getByText(/Zoho could not be read for the last 90 days/)).toBeInTheDocument()
+    expect(screen.queryByText('Customer concentration: sales')).not.toBeInTheDocument()
   })
   it('says so when the run has no open items stored', async () => {
     stubApi({})

@@ -28,5 +28,6 @@ export interface WorkingCapital {
   sales_90: number | null
   cogs_90: number | null
   flows_available: boolean
+  flows_snapshot: { saved_at: string | null; sample: boolean } | null
   concentration: { ar: Shares; sales: Shares | null }
 }

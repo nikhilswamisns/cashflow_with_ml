@@ -90,4 +90,6 @@ def build_working_capital(snapshot: dict, as_of: date, flows: dict | None) -> di
             "dpo": days_ratio(ap["total"], flows.get("cogs")),
             "sales_90": flows.get("sales"), "cogs_90": flows.get("cogs"),
             "flows_available": bool(flows),
+            "flows_snapshot": ({"saved_at": flows.get("saved_at"), "sample": bool(flows.get("sample"))}
+                               if flows.get("from_snapshot") else None),
             "concentration": concentration(snapshot.get("invoices", []), flows.get("sales_by_customer"))}

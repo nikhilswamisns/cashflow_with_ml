@@ -1,15 +1,19 @@
 """Last-90-day sales (invoiced) and cost of goods sold, read live from Zoho Books, cached for TTL_SECONDS.
 
-Used for DSO and DPO. Read-only. Any Zoho failure returns None so the page shows "not available" instead of a wrong number.
+Used for DSO and DPO. Read-only. A successful read is saved to data/flows_snapshot.json; if Zoho cannot be read the last saved snapshot is used
+(flagged from_snapshot), and None only when there is no snapshot either.
 Sales are invoices dated in the window (not draft, not void). COGS is the Cost of Goods Sold section total of the
 Zoho Profit and Loss report for the same window (accrual basis).
 """
+import json
 import logging
 import threading
 import time
 from datetime import date, timedelta
+from pathlib import Path
 
 log = logging.getLogger(__name__)
+SNAPSHOT_PATH = Path(__file__).resolve().parent.parent / "data" / "flows_snapshot.json"  # data/ is not committed
 TTL_SECONDS = 600
 _lock = threading.Lock()
 _CACHE: dict = {}  # window end date -> (read at, value)
@@ -55,6 +59,23 @@ def read_flows(client, today: date, window: int = 90) -> dict:
     return {"sales": sales, "sales_by_customer": by, "cogs": _cogs_from_report(report), "from": start, "to": end}
 
 
+def _save_snapshot(value: dict) -> None:
+    try:
+        SNAPSHOT_PATH.parent.mkdir(exist_ok=True)
+        tmp = SNAPSHOT_PATH.with_suffix(".tmp")
+        tmp.write_text(json.dumps({**value, "saved_at": date.today().isoformat()}))
+        tmp.replace(SNAPSHOT_PATH)
+    except OSError:
+        log.exception("Could not save the 90-day flows snapshot")
+
+
+def _load_snapshot() -> dict | None:
+    try:
+        return {**json.loads(SNAPSHOT_PATH.read_text()), "from_snapshot": True}
+    except (OSError, ValueError):
+        return None
+
+
 def get_flows(client=None, today: date | None = None) -> dict | None:
     """Flows for the 90 days ending `today` (default: today). Cached per end date for TTL_SECONDS."""
     today = today or date.today()
@@ -67,8 +88,9 @@ def get_flows(client=None, today: date | None = None) -> dict | None:
                 from zoho.client import ZohoClient
                 client = ZohoClient()
             value = read_flows(client, today)
+            _save_snapshot(value)
         except Exception:
-            log.exception("Could not read 90-day sales and COGS from Zoho")
-            value = None
+            log.exception("Could not read 90-day sales and COGS from Zoho; using the last saved snapshot")
+            value = _load_snapshot()
         _CACHE[today] = (time.time(), value)
         return value
