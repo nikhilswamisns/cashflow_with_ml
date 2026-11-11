@@ -4,19 +4,21 @@ import type { DashboardData } from '@/features/dashboard/types'
 import { dlabel, kfmt, sum } from '@/shared/format'
 import { alpha, useChartTokens } from '@/shared/chart/tokens'
 import { baseOptions } from '@/shared/chart/base'
+import { RangeToggle } from '@/features/dashboard/RangeToggle'
 
 type Key = 'booked' | 'reseller' | 'forecast'
 
 export function ReceiptsChart({ d, pending }: { d: DashboardData; pending: boolean }) {
   const t = useChartTokens()
   const [on, setOn] = useState<Record<Key, boolean>>({ booked: true, reseller: true, forecast: true })
-  const labels = useMemo(() => d.labels.map(dlabel), [d])
-  const docs = d.receipts?.docs ?? []
-  const runrate = d.receipts?.runrate ?? []
-  const forecast = d.receipts?.forecast ?? []
+  const [n, setN] = useState(13)
+  const labels = useMemo(() => d.labels.map(dlabel).slice(0, n), [d, n])
+  const docs = (d.receipts?.docs ?? []).slice(0, n)
+  const runrate = (d.receipts?.runrate ?? []).slice(0, n)
+  const forecast = (d.receipts?.forecast ?? []).slice(0, n)
   const sets: [Key, string, number[], string][] = [
     ['booked', 'Invoiced and ordered', docs, t.booked],
-    ['reseller', 'Regular reseller income', runrate, t.reseller],
+    ['reseller', 'Expected income', runrate, t.reseller],
     ['forecast', 'Forecast new sales', forecast, t.forecast],
   ]
   const data = {
@@ -69,6 +71,9 @@ export function ReceiptsChart({ d, pending }: { d: DashboardData; pending: boole
           <h2>Expected receipts</h2>
           <p className="sub">Cash in per week, split by how certain it is. No costs.</p>
         </div>
+        <div className="controls">
+          <RangeToggle value={n} onChange={setN} />
+        </div>
         <div className="chips-row">
           {sets.map(([k, l, arr, c]) => (
             <button
@@ -88,9 +93,9 @@ export function ReceiptsChart({ d, pending }: { d: DashboardData; pending: boole
         <Line data={data} options={options} />
       </div>
       <p className="insight">
-        Of <b>{kfmt(tot)}</b> expected in 52 weeks, only <b>{steady}%</b> is booked or a steady reseller run-rate.{' '}
-        <b>{Math.round((sum(forecast) / tot) * 100)}%</b> depends on new sales that have not happened yet, and from
-        about week 19 the bars are almost all forecast.
+        Of <b>{kfmt(tot)}</b> expected in {n} weeks, only <b>{steady}%</b> is booked or a steady reseller run-rate.{' '}
+        <b>{Math.round((sum(forecast) / tot) * 100)}%</b> depends on new sales that have not happened yet
+        {n > 19 && ', and from about week 19 the bars are almost all forecast'}.
       </p>
     </section>
   )
