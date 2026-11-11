@@ -48,4 +48,5 @@ export interface DashboardData {
   inflows: number[]
   outflows: number[]
   streams: Record<string, number[]>
+  outflowStreams: Record<string, number[]> // outflows grouped by purpose; empty on a saved run without them
 }

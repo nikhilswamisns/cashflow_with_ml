@@ -37,6 +37,7 @@ export function useDashboard(runId: string) {
         inflows: a.inflows,
         outflows: a.outflows,
         streams: a.revenue_streams,
+        outflowStreams: a.outflow_streams ?? {},
       },
     [a, ml.data, rc.data, ac.data],
   )

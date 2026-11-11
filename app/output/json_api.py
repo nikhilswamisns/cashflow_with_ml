@@ -73,6 +73,9 @@ def _matrix_to_json(matrix: WeeklyMatrix) -> str:
     )
 
 
+from app.outflow_buckets import outflow_buckets
+
+
 def compute_analytics_from_dict(matrix_data: dict) -> dict:
     weeks = matrix_data.get("weeks", [])
     labels = []
@@ -89,6 +92,7 @@ def compute_analytics_from_dict(matrix_data: dict) -> dict:
     cogs_cogs = []
     cogs_freight = []
     cogs_duty = []
+    out_streams: dict[str, list] = {}
     
     lowest_cash = None
     lowest_week = None
@@ -141,6 +145,8 @@ def compute_analytics_from_dict(matrix_data: dict) -> dict:
         tot_out = c_tot + o_ops + o_mkt + o_sell + o_fin + o_it + o_non
         tot_out += _get_val("cc_payment_due") + _get_val("loan_repayments") - _get_val("cc_charges_deferred")
         outflows.append(round(tot_out, 2))
+        for k, v in outflow_buckets(w, tot_out).items():
+            out_streams.setdefault(k, []).append(v)
         net_cashflow.append(round(r_tot - tot_out, 2))
 
     ar_trajectory = []
@@ -187,6 +193,7 @@ def compute_analytics_from_dict(matrix_data: dict) -> dict:
             "Amazon": rev_amazon,
             "A/R Collection": rev_ar,
         },
+        "outflow_streams": out_streams,
         "cogs_breakdown": {
             "COGS Standard": cogs_cogs,
             "Inbound Freight": cogs_freight,

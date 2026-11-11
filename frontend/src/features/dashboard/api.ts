@@ -6,6 +6,7 @@ interface Analytics {
   inflows: number[]
   outflows: number[]
   revenue_streams: Record<string, number[]>
+  outflow_streams?: Record<string, number[]>
   ar_ap: { ar_trajectory: number[]; ap_trajectory: number[] }
   kpis: KpiValues
 }

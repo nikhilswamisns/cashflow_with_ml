@@ -32,6 +32,7 @@ const base: DashboardData = {
   inflows: [],
   outflows: [],
   streams: {},
+  outflowStreams: {},
   kpis: {
     opening_cash: 74000,
     ending_cash: 80,

@@ -4,6 +4,7 @@ import { Kpis } from '@/features/dashboard/Kpis'
 import { FundingGap } from '@/features/dashboard/FundingGap'
 import { LeadChart } from '@/features/dashboard/LeadChart'
 import { ReceiptsChart } from '@/features/dashboard/ReceiptsChart'
+import { OutflowChart } from '@/features/dashboard/OutflowChart'
 import { ArApChart, InOutChart, StreamsChart } from '@/features/dashboard/OtherCharts'
 export function DashboardPage() {
   const { runId, run } = useRun()
@@ -34,6 +35,7 @@ export function DashboardPage() {
         <InOutChart d={d} />
       </section>
       <StreamsChart d={d} />
+      <OutflowChart d={d} />
     </main>
   )
 }
