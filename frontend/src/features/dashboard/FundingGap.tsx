@@ -9,7 +9,7 @@ export function FundingGap({ d }: { d: DashboardData }) {
   const { data: loans } = useLoans()
   const buffer = d.floor ?? 0
   const dates = fullDates(d.labels, d.kpis.as_of ?? '')
-  const lines: [string, number[]][] = [['our assumptions', d.cash_rules]]
+  const lines: [string, number[]][] = [[d.rulesFromSavedRun ? 'saved run' : 'our assumptions', d.cash_rules]] // until the comparison loads, the saved run may already be AI-timed
   if (d.ml) lines.push(['AI model', d.ml.cash_ml])
   const stats = lines.map(([name, a]) => {
     const min = Math.min(...a)
