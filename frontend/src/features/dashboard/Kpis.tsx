@@ -10,7 +10,7 @@ export function Kpis({ d, syncedLabel }: { d: DashboardData; syncedLabel?: strin
   const k = d.kpis
   const dates = fullDates(d.labels, k.as_of ?? '')
   const low = minOf(d.cash_rules)
-  const line = d.rulesFromSavedRun ? 'saved run' : 'rule-date line'
+  const line = d.rulesFromSavedRun ? 'saved run' : 'our assumptions'
   const items: [string, string, string, string][] = [
     [
       'Book cash (Zoho)',

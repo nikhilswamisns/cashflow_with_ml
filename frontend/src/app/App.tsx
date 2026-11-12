@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '@/shared/theme'
 import { ToastProvider } from '@/shared/toast'
 import { RunProvider } from '@/features/runs/RunProvider'
+import { ChatProvider } from '@/features/chat/ChatProvider'
 import { SyncProvider } from '@/features/sync/SyncProvider'
 import { Shell } from '@/features/shell/Shell'
 import { ErrorBoundary } from './ErrorBoundary'
@@ -17,6 +18,7 @@ const ActionsPage = lazy(() => import('@/features/actions/ActionsPage').then((m)
 const WorkingCapitalPage = lazy(() =>
   import('@/features/workingcapital/WorkingCapitalPage').then((m) => ({ default: m.WorkingCapitalPage })),
 )
+const ChatPage = lazy(() => import('@/features/chat/ChatPage').then((m) => ({ default: m.ChatPage })))
 const DataSyncPage = lazy(() => import('@/features/sync/DataSyncPage').then((m) => ({ default: m.DataSyncPage })))
 const AssumptionsPage = lazy(() =>
   import('@/features/config/AssumptionsPage').then((m) => ({ default: m.AssumptionsPage })),
@@ -44,6 +46,7 @@ function Pages() {
             <Route path="working-capital" element={<WorkingCapitalPage />} />
             <Route path="data" element={<DataSyncPage />} />
             <Route path="assumptions" element={<AssumptionsPage />} />
+            <Route path="chat" element={<ChatPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
@@ -60,7 +63,9 @@ export function App() {
           <BrowserRouter basename="/ui2">
             <RunProvider>
               <SyncProvider>
-                <Pages />
+                <ChatProvider>
+                  <Pages />
+                </ChatProvider>
               </SyncProvider>
             </RunProvider>
           </BrowserRouter>

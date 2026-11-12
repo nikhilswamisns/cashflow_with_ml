@@ -43,7 +43,7 @@ describe('Kpis', () => {
     expect(screen.getByText('$74,097')).toBeInTheDocument()
     expect(screen.getByText('Zoho book balance · Oct 30')).toBeInTheDocument()
     expect(screen.getByText('−$50')).toBeInTheDocument()
-    expect(screen.getByText('Week ending Nov 6, 2026 · rule-date line')).toBeInTheDocument()
+    expect(screen.getByText('Week ending Nov 6, 2026 · our assumptions')).toBeInTheDocument()
     expect(screen.getByText('$330,356')).toBeInTheDocument()
     expect(screen.getByText('You owe vendors. A/R covers it 1.07×.')).toBeInTheDocument()
   })

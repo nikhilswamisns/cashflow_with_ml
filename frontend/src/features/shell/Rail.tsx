@@ -1,9 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { MessageSquare } from 'lucide-react'
 import { useRun } from '@/features/runs/RunProvider'
-import { CHAT_ENABLED } from '@/features/chat/enabled'
 import { NAV } from './nav'
-export function Rail({ onAsk, onNavigate }: { onAsk: () => void; onNavigate: () => void }) {
+export function Rail({ onNavigate }: { onNavigate: () => void }) {
   const { runs, run, selectRun } = useRun()
   const { search } = useLocation() // keeps ?run=<id> when you move between pages
   return (
@@ -32,7 +30,7 @@ export function Rail({ onAsk, onNavigate }: { onAsk: () => void; onNavigate: () 
         </div>
       </div>
       <nav className="nav">
-        {NAV.map((g, gi) => (
+        {NAV.map((g) => (
           <div key={g.label} style={{ display: 'contents' }}>
             <div className="nav-label">{g.label}</div>
             {g.items.map(({ to, label, icon: Icon }) => (
@@ -47,15 +45,6 @@ export function Rail({ onAsk, onNavigate }: { onAsk: () => void; onNavigate: () 
                 {label}
               </NavLink>
             ))}
-            {gi === 0 && CHAT_ENABLED && (
-              <>
-                <div className="nav-label">Assistant</div>
-                <button className="nav-item" onClick={onAsk}>
-                  <MessageSquare size={18} strokeWidth={1.7} />
-                  Ask Gutster
-                </button>
-              </>
-            )}
           </div>
         ))}
       </nav>

@@ -105,7 +105,7 @@ export function LeadChart({
           hidden: !showM,
         },
         {
-          label: 'Likely range (ML timing)',
+          label: 'Likely range (AI model)',
           data: over(d.ml?.p90 ?? []),
           borderColor: 'transparent',
           backgroundColor: alpha(t.ml, 0.14),
@@ -115,7 +115,7 @@ export function LeadChart({
           hidden: !showM,
         },
         {
-          label: 'Rules timing',
+          label: 'Our assumptions',
           data: cut(d.cash_rules),
           borderColor: t.cash,
           backgroundColor: fillGradient,
@@ -128,7 +128,7 @@ export function LeadChart({
           ...past(t.cash, alpha(t.cash, 0.3)),
         },
         {
-          label: 'ML timing',
+          label: 'AI model',
           data: cut(d.ml?.cash_ml ?? []),
           borderColor: t.ml,
           borderWidth: 2.4,
@@ -207,7 +207,7 @@ export function LeadChart({
       <div className="card-head">
         <div>
           <h2>Cash position</h2>
-          <p className="sub">Weekly ending cash, costs included. Same documents, two payment-timing assumptions.</p>
+          <p className="sub">Weekly ending cash, costs included. Same documents, two views: our assumptions and the AI model.</p>
         </div>
         <div className="controls">
           {hasMl && (
@@ -215,8 +215,8 @@ export function LeadChart({
               {(
                 [
                   ['both', 'Both'],
-                  ['rules', 'Rules'],
-                  ['ml', 'ML timing'],
+                  ['rules', 'Our assumptions'],
+                  ['ml', 'AI model'],
                 ] as const
               ).map(([k, l]) => (
                 <button key={k} className={view === k ? 'on' : ''} aria-pressed={view === k} onClick={() => setView(k)}>
@@ -230,7 +230,7 @@ export function LeadChart({
       </div>
       {mlPending ? (
         <div className="chart tall chart-wait">
-          <span>Loading the ML timing line…</span>
+          <span>Loading the AI model line…</span>
         </div>
       ) : (
         <div className="chart tall">
@@ -239,24 +239,24 @@ export function LeadChart({
       )}
       {mlFailed && (
         <p className="insight warn">
-          ML timing is not available for this run. The blue line is the saved run, which may already include ML timing.
+          The AI model is not available for this run. The blue line is the saved run, which may already include it.
         </p>
       )}
       <div className="legend">
         <span>
           <i style={{ background: t.cash }} />
-          {hasMl ? 'Paid on rule dates' : 'Cash balance'}
+          {hasMl ? 'Paid on due dates (our assumptions)' : 'Cash balance'}
         </span>
         {hasMl && (
           <span style={{ color: t.ml }}>
             <i className="dash" />
-            <span style={{ color: 'var(--text-2)' }}>Paid when customers actually pay (ML timing)</span>
+            <span style={{ color: 'var(--text-2)' }}>Paid when customers actually pay (AI model)</span>
           </span>
         )}
         {hasMl && (
           <span>
             <i className="box" style={{ background: alpha(t.ml, 0.35) }} />
-            Likely range (p10 to p90)
+            Likely range (AI model)
           </span>
         )}
         {act && (
@@ -292,12 +292,12 @@ export function LeadChart({
               ? `never below ${usd(limit)}`
               : `below ${usd(limit)} for ${below} of ${d.cash_rules.length} weeks`}
           </b>
-          {!mlFailed && ' on the rules'}, with the lowest point at <b>{usd(minRules)}</b> in the week ending{' '}
+          {!mlFailed && ' by our assumptions'}, with the lowest point at <b>{usd(minRules)}</b> in the week ending{' '}
           {labels[minI]}.
           {d.ml && (
             <>
               {' '}
-              With ML timing the low is <b>{usd(mlMin)}</b> ({labels[mlMinI]})
+              The AI model puts the low at <b>{usd(mlMin)}</b> ({labels[mlMinI]})
               {mlMin > minRules ? ', because customers tend to pay earlier than the due date' : ''}.
             </>
           )}

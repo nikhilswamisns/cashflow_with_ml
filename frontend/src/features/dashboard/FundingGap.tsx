@@ -8,8 +8,8 @@ export function FundingGap({ d }: { d: DashboardData }) {
   const { data: loans } = useLoans()
   const buffer = d.floor ?? 0
   const dates = fullDates(d.labels, d.kpis.as_of ?? '')
-  const lines: [string, number[]][] = [['rule-date line', d.cash_rules]]
-  if (d.ml) lines.push(['ML line', d.ml.cash_ml])
+  const lines: [string, number[]][] = [['our assumptions', d.cash_rules]]
+  if (d.ml) lines.push(['AI model', d.ml.cash_ml])
   const stats = lines.map(([name, a]) => {
     const min = Math.min(...a)
     return { name, min, i: a.indexOf(min), need: Math.max(0, buffer - min), below: a.filter((v) => v < 0).length }

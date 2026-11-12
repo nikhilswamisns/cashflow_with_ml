@@ -1,43 +1,23 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { Mic, Send, MessageSquare, X } from 'lucide-react'
+import { useEffect } from 'react'
+import { Maximize2, MessageSquare, RotateCcw, X } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useRun } from '@/features/runs/RunProvider'
-import { useDashboard } from '@/features/dashboard/hooks'
-import { askQuestion } from '@/features/chat/api'
-import { dlabel, usd } from '@/shared/format'
-interface Msg {
-  q: string
-  html: string
-  source: string
-}
-const CHIPS = ['Which week is the lowest?', 'Total payments from a client', 'Which client pays best?']
+import { ChatThread } from '@/features/chat/ChatThread'
+import { useChat } from '@/features/chat/ChatProvider'
 
 interface Props {
   open: boolean
   setOpen: (o: boolean) => void
 }
 
+/** The corner popup. On the Ask Gutster page it hides, because the page is the same chat. */
 export function ChatWidget({ open, setOpen }: Props) {
-  const { run, runId } = useRun()
-  const { data: d } = useDashboard(runId)
+  const { run } = useRun()
+  const { msgs, clear } = useChat()
+  const { pathname, search } = useLocation()
+  const nav = useNavigate()
+  const onPage = pathname === '/chat'
   const runLabel = run?.label ?? ''
-  const first = useMemo<Msg | null>(
-    () =>
-      !d
-        ? null
-        : {
-            q: 'What will cash be this coming week?',
-            html: `Cash is forecast to end the week of <b>${dlabel(d.labels[0])}</b> at <b>${usd(d.cash_rules[0])}</b> on the standard timing rules${d.ml ? `, or <b>${usd(d.ml.cash_ml[0])}</b> if customers pay the way they usually do (ML timing)` : ''}.`,
-            source: `Used: forecast run ${runLabel}, week 1 · same run`,
-          },
-    [d, runLabel],
-  )
-  const [asked, setAsked] = useState<Msg[]>([])
-  const msgs = useMemo(() => (first ? [first, ...asked] : asked), [first, asked])
-  const [text, setText] = useState('')
-  const end = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (open) end.current?.scrollIntoView({ block: 'end' })
-  }, [msgs, open])
   useEffect(() => {
     const esc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false)
@@ -45,17 +25,7 @@ export function ChatWidget({ open, setOpen }: Props) {
     document.addEventListener('keydown', esc)
     return () => document.removeEventListener('keydown', esc)
   }, [setOpen])
-
-  async function ask(q: string) {
-    if (!q.trim()) return
-    const a = await askQuestion(runId, q)
-    setAsked((m) => [...m, { q, ...a }])
-    setText('')
-  }
-  const submit = (e: FormEvent) => {
-    e.preventDefault()
-    void ask(text)
-  }
+  if (onPage) return null
 
   return (
     <>
@@ -72,48 +42,28 @@ export function ChatWidget({ open, setOpen }: Props) {
               </span>
               <h2>Ask Gutster</h2>
             </div>
-            <span className="pill soft" title="Every answer names the run and sync time it used">
-              Run {runLabel.replace(/ 20\d\d$/, '')}
-            </span>
+            <span className="pill soft">Run {runLabel.replace(/,? 20\d\d$/, '')}</span>
+            {msgs.length > 0 && (
+              <button className="icon-btn" aria-label="New chat" title="New chat" onClick={clear}>
+                <RotateCcw size={16} />
+              </button>
+            )}
+            <button
+              className="icon-btn"
+              aria-label="Open as a full page"
+              title="Open as a full page"
+              onClick={() => {
+                setOpen(false)
+                nav({ pathname: '/chat', search })
+              }}
+            >
+              <Maximize2 size={16} />
+            </button>
             <button className="icon-btn" aria-label="Close chat" onClick={() => setOpen(false)}>
               <X size={18} />
             </button>
           </div>
-          <div className="thread" aria-live="polite">
-            {msgs.map((m, i) => (
-              <div key={i} style={{ display: 'contents' }}>
-                <div className="msg-q">{m.q}</div>
-                <div className="msg-a">
-                  <span dangerouslySetInnerHTML={{ __html: m.html }} />
-                  <div className="src">{m.source}</div>
-                </div>
-              </div>
-            ))}
-            <div ref={end} />
-          </div>
-          <div className="chips">
-            {CHIPS.map((c) => (
-              <button key={c} onClick={() => void ask(c)}>
-                {c}
-              </button>
-            ))}
-          </div>
-          <form className="composer" onSubmit={submit}>
-            <input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Ask about cash, customers, payments…"
-              autoComplete="off"
-              aria-label="Ask a question"
-            />
-            <button type="button" className="icon-btn" aria-label="Speak" title="Speak your question">
-              <Mic size={18} />
-            </button>
-            <button type="submit" className="send" aria-label="Send">
-              <Send size={18} />
-            </button>
-          </form>
-          <p className="fine">Sample answer. Figures come from the forecast engine, not from the model.</p>
+          <ChatThread active={open} />
         </section>
       )}
     </>

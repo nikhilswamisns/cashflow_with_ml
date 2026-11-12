@@ -442,6 +442,37 @@ def get_working_capital(run_id: str):
     return {"run_id": run_id, **build_working_capital(snap, as_of, get_flows(today=as_of))}
 
 
+@router.post("/chat")
+def chat(body: dict):
+    """Ask the AI advisor. Body: {question, history?: [{role, content}]}. Streams one JSON event per line (NDJSON):
+    tool / delta / done / error. Read-only tools over the latest run."""
+    from fastapi.responses import StreamingResponse
+    from app.chat.agent import events
+    q = str(body.get("question") or "").strip()
+    if not q:
+        raise HTTPException(status_code=400, detail="Ask a question.")
+
+    def stream():
+        try:
+            for e in events(q[:2000], body.get("history")):
+                yield json.dumps(e) + "\n"
+        except Exception:
+            logger.exception("Chat failed")
+            yield json.dumps({"type": "error", "message": "The AI service did not answer. Try again."}) + "\n"
+    return StreamingResponse(stream(), media_type="application/x-ndjson", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@router.post("/chat/transcribe")
+def chat_transcribe(audio: UploadFile = File(...)):
+    """Mic button: audio recording in, text out (OpenAI Whisper). The text is then sent to /chat like a typed question."""
+    from app.chat.voice import MAX_BYTES, transcribe
+    data = audio.file.read(MAX_BYTES + 1)
+    out = transcribe(data, audio.filename or "audio.webm", audio.content_type or "audio/webm")
+    if out.get("error"):
+        raise HTTPException(status_code=400 if "audio" in out["error"] or "hear" in out["error"] or "long" in out["error"] else 503, detail=out["error"])
+    return out
+
+
 @router.get("/runs/{run_id}/analytics")
 def get_analytics(run_id: str):
     run = db.get_run(run_id)

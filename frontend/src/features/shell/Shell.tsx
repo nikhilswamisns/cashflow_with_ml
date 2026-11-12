@@ -23,13 +23,7 @@ export function Shell() {
   return (
     <div className={`app ${navOpen ? 'nav-open' : ''}`}>
       <div className="scrim" onClick={() => setNavOpen(false)} />
-      <Rail
-        onAsk={() => {
-          setNavOpen(false)
-          setChatOpen(true)
-        }}
-        onNavigate={() => setNavOpen(false)}
-      />
+      <Rail onNavigate={() => setNavOpen(false)} />
       <div className="main">
         <TopBar onOpenNav={() => setNavOpen(true)} />
         <Outlet />

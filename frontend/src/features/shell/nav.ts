@@ -1,7 +1,9 @@
+import { CHAT_ENABLED } from '@/features/chat/enabled'
 import {
   Database,
   LayoutDashboard,
   ListChecks,
+  MessageSquare,
   Scale,
   SlidersHorizontal,
   Table2,
@@ -38,6 +40,7 @@ export const NAV: NavGroup[] = [
       { to: '/assumptions', label: 'Assumptions', icon: SlidersHorizontal },
     ],
   },
+  ...(CHAT_ENABLED ? [{ label: 'Assistant', items: [{ to: '/chat', label: 'Ask Gutster', icon: MessageSquare }] }] : []),
 ]
 export const TITLES: Record<string, string> = Object.fromEntries(
   NAV.flatMap((g) => g.items.map((i) => [i.to, i.label])),

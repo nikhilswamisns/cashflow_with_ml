@@ -53,7 +53,7 @@ describe('LeadChart axis and lines', () => {
   it('without actuals (Zoho off): plain forecast weeks, in order, nothing undefined, no green line', () => {
     render(<LeadChart d={base} mlPending={false} mlFailed={false} />)
     expect(seen!.labels).toEqual(['Nov 6', 'Nov 13', 'Nov 20'])
-    expect(line('Rules timing')).toEqual([100, 90, 80])
+    expect(line('Our assumptions')).toEqual([100, 90, 80])
     expect(seen!.datasets.some((d) => d.label?.startsWith('Actual'))).toBe(false)
   })
   it('with actuals: today sits between the Fridays and every line starts at its actual balance', () => {
@@ -66,10 +66,10 @@ describe('LeadChart axis and lines', () => {
     }
     render(<LeadChart d={{ ...base, actuals }} mlPending={false} mlFailed={false} />)
     expect(seen!.labels).toEqual(['Nov 6', 'Nov 11', 'Nov 13', 'Nov 20'])
-    expect(line('Rules timing')).toEqual([100, 60, 90, 80]) // 6 Nov: the earlier forecast; from 11 Nov: today's actual
-    expect(line('ML timing')).toEqual([101, 60, 91, 81])
+    expect(line('Our assumptions')).toEqual([100, 60, 90, 80]) // 6 Nov: the earlier forecast; from 11 Nov: today's actual
+    expect(line('AI model')).toEqual([101, 60, 91, 81])
     expect(line('Actual cash (Zoho books)')).toEqual([54, 60, null, null])
-    expect(line('Likely range (ML timing)')).toEqual([null, 60, 95, 85]) // no band for the week already over
+    expect(line('Likely range (AI model)')).toEqual([null, 60, 95, 85]) // no band for the week already over
   })
 
   it('draws the grey assumption zone from the right slot, and one slot later when the today slot is added', () => {
