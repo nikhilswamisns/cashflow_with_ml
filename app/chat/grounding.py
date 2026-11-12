@@ -51,9 +51,17 @@ def _close_or_sum(x: float, tol: float, pool: list[float]) -> bool:
     return any(abs((x - v) - w) <= 2 * tol + 0.0101 for v in small for w in have if w <= x - v + tol + 0.01)
 
 
-def unverified(text: str, results: list) -> list[str]:
-    """Figures quoted in `text` that match no number in `results`, as written in the text."""
-    pool = tool_numbers(results)
+def figures_in(text: str) -> list[float]:
+    """Dollar amounts, percents and day counts written in `text` (used for what earlier answers already said)."""
+    out = [float(m.group(1).replace(",", "")) * SCALE.get((m.group(2) or "").lower(), 1.0) for m in MONEY.finditer(text)]
+    out += [float(m.group(1)) for m in PERCENT.finditer(text)] + [float(m.group(1)) for m in DAYS.finditer(text)]
+    return out
+
+
+def unverified(text: str, results: list, earlier: list[float] | None = None) -> list[str]:
+    """Figures quoted in `text` that match no number in `results` (or in `earlier`, figures from replies already given in
+    this conversation, which came from tools in their own turn), as written in the text."""
+    pool = tool_numbers(results) + [abs(v) for v in (earlier or [])]
     bad: list[str] = []
     for m in MONEY.finditer(text):
         raw = m.group(1).replace(",", "")

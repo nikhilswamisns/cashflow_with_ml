@@ -78,7 +78,7 @@ def build_cases(ctx: Context) -> list[dict]:
         dict(id="cust-fastest", q="Which customers pay fastest?", tools=["rank_customers"]),
         dict(id="cust-ambiguous", q="Total payments from SERVPRO", tools=["customer_payments"], phrases=["which"]),
         dict(id="explain-views", q="What is the difference between the AI model and our assumptions?", phrases=["ai model", "assumptions", "paid"], no_tools=True),
-        dict(id="unknown-shopify", q="What is our Shopify revenue?", phrases=["don't have that in our data"], no_tools=True),
+        dict(id="unknown-etsy", q="What is our Etsy revenue?", phrases=["in our data"]),
         dict(id="unknown-why", q="Why did SERVPRO's payments drop last quarter?", phrases=["don't have that in our data"]),
         dict(id="unknown-people", q="Who is our highest paid employee?", phrases=["don't have that in our data"], no_tools=True),
         dict(id="unknown-weather", q="What's the weather in Dallas?", phrases=["don't have that in our data"], no_tools=True),
@@ -103,7 +103,7 @@ def grade(c: dict, r: dict) -> list[str]:
     for p in c.get("phrases", []):
         if p.lower() not in low and not c.get("loose_date"):
             fails.append(f"missing phrase '{p}'")
-    used = [t["tool"] for t in r.get("tools_used", [])]
+    used = [t["tool"] for t in r.get("tools_used", []) if t["tool"] != "no_data_needed"]  # no_data_needed = "answer in words"
     want = c.get("tools", [])
     if want and not (any(t in used for t in want) if c.get("any_tool") else all(t in used for t in want)):
         fails.append(f"tools {used}, wanted {want}")

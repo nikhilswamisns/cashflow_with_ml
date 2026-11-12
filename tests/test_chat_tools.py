@@ -108,6 +108,14 @@ def test_chat_loop_runs_tool_then_answers(monkeypatch):
     assert out["answer"] == "Cash ends the week at -$50." and out["tools_used"] == [{"tool": "cash_outlook", "args": {"weeks": 1}}]
     tool_msg = [m for m in seen[1]["messages"] if m["role"] == "tool"][0]
     assert "-50" in tool_msg["content"]
+    assert seen[0]["tool_choice"] == "required" and "tool_choice" not in seen[1]   # the first step must pick a tool
+
+
+def test_numbers_from_earlier_replies_are_not_flagged_but_new_ones_are():
+    from app.chat.grounding import figures_in, unverified
+    earlier = figures_in("The top invoice is $7,500 from A, 12% of the total, 15.8 days late.")
+    assert unverified("That $7,500 invoice is the biggest.", [], earlier) == []
+    assert unverified("It is $9,000 from B.", [], earlier) == ["$9,000"]   # nothing in this turn's tools or earlier replies backs it
 
 
 def test_unknown_tool_and_missing_key(monkeypatch):

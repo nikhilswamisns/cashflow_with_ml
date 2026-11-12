@@ -13,7 +13,10 @@ from app.chat import tools
 
 logger = logging.getLogger(__name__)
 
+NO_DATA = "no_data_needed"
 SPECS = [
+    {"name": NO_DATA, "description": "Call this, and nothing else, only when the question needs no figures from our data: explaining how our assumptions and the AI model differ, greetings, questions about reasons or causes (why something changed), trends over past quarters or years, anything outside our data, or a request to change something. Then answer in words with no new numbers.",
+     "parameters": {"type": "object", "properties": {}}},
     {"name": "cash_outlook", "description": "Forecast cash balance for the coming week(s): opening cash, money in, money out, ending cash according to our assumptions AND according to the AI model (plus its likely range), and the lowest week.",
      "parameters": {"type": "object", "properties": {"weeks": {"type": "integer", "description": "How many forecast weeks from this week (1-13)."}}}},
     {"name": "outflows_by_purpose", "description": "Where forecast cash goes each week: inventory, freight, payroll (assumed), marketing, fulfilment, loans, other.",
@@ -30,6 +33,27 @@ SPECS = [
 ]
 
 
+
+def rules_matrix(run_id: str) -> dict | None:
+    """The run's matrix timed by our assumptions only. When the app has the AI model switched on in its settings, the saved
+    matrix is already AI-timed, so rebuild it with the AI model off (the same way the AI-model comparison does)."""
+    from app.output.json_api import get_matrix
+    try:
+        import copy
+        from app.engine.v10_engine import V10Engine
+        from app.output.v10_adapter import forecast_for_run, forecast_to_matrix_dict, get_prior_snapshot, get_run_snapshot
+        base = forecast_for_run(run_id)
+        if base is not None and (base.rules.get("ml") or {}).get("enabled"):
+            rules = copy.deepcopy(base.rules)
+            rules["ml"]["enabled"] = False
+            rules["opening_cash"]["manual_adjustments"] = [dict(x) for x in base.manual_adjustments]
+            snap = get_run_snapshot(run_id)
+            return forecast_to_matrix_dict(V10Engine(snap, rules=rules, prior_snapshot=get_prior_snapshot(run_id)).run())
+    except Exception:
+        logger.warning("Could not rebuild the assumptions-only matrix for run %s", run_id, exc_info=True)
+    return get_matrix(run_id)
+
+
 class Context:
     """The latest executed run, loaded once per question."""
 
@@ -41,8 +65,7 @@ class Context:
     @property
     def matrix(self) -> dict | None:
         if self._matrix is None and self.run:
-            from app.output.json_api import get_matrix
-            self._matrix = get_matrix(self.run["run_id"])
+            self._matrix = rules_matrix(self.run["run_id"])
         return self._matrix
 
     @property
@@ -74,6 +97,8 @@ def run_tool(name: str, args: dict, ctx: Context) -> dict:
     try:
         if name not in {s["name"] for s in SPECS}:
             return {"error": f"Unknown tool {name}"}
+        if name == NO_DATA:
+            return {"note": "No data is needed for this. Do not state any new dollar amounts, percentages or day counts."}
         if ctx.run is None:
             return {"error": "No forecast run exists yet. Run a Sync from Zoho first."}
         if name == "cash_outlook":

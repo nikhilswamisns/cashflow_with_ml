@@ -204,8 +204,20 @@
 .msg-a ul { margin: 0 0 6px; padding-left: 18px; }
 .chips button:disabled, .composer .send:disabled { opacity: 0.5; cursor: default; }
 
-.msg-a .status { color: var(--muted, #6b7280); font-size: 0.85em; animation: chat-pulse 1.2s ease-in-out infinite; }
-@keyframes chat-pulse { 50% { opacity: 0.45; } }
+/* "Thinking…" / "Reading your forecast…": a light band sweeps across the words */
+.msg-a .status {
+  font-size: 0.85em;
+  color: var(--muted, #6b7280);
+  background: linear-gradient(100deg, var(--muted, #6b7280) 35%, var(--text, #111827) 50%, var(--muted, #6b7280) 65%) 100% 0 / 250% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: chat-shimmer 1.6s linear infinite;
+}
+@keyframes chat-shimmer { to { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .msg-a .status { animation: none; background: none; -webkit-text-fill-color: currentColor; }
+}
 .msg-a .warn { margin-top: 6px; font-size: 0.82em; color: #92400e; background: #fef3c7; border-radius: 6px; padding: 4px 8px; }
 
 .chat-chart { margin: 10px 0 4px; }

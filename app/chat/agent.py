@@ -18,6 +18,7 @@ from typing import Iterator
 import dotenv
 import httpx
 
+from app.chat.registry import NO_DATA
 from app.chat.charts import chart_for
 
 # where the same numbers are already drawn on the dashboard, so an answer can point at the chart
@@ -27,7 +28,7 @@ LINKS = {
     "working_capital": {"label": "Open Working capital", "to": "/working-capital"},
     "actions": {"label": "Open Actions", "to": "/actions"},
 }
-from app.chat.grounding import unverified
+from app.chat.grounding import figures_in, unverified
 from app.chat.registry import SPECS, Context, result_text, run_tool
 
 URL = "https://api.openai.com/v1/chat/completions"
@@ -38,6 +39,8 @@ SYSTEM = """You are the cash flow advisor inside a company's weekly cash forecas
 Answer only from the tools. Call them to get numbers; never guess or use outside knowledge of the company.
 Rules:
 - Use plain words and dollar amounts with commas. Be short: lead with the answer, then 2-4 supporting points.
+- Every new question about our data needs a fresh tool call in this turn, even when it looks like an earlier answer. Never reuse customer
+  names or amounts from earlier replies as if they answered a different question.
 - Do not add a "source" or "used" line; the interface handles that.
 - If a tool returns an error or the data is missing, say "not found in our data" and what is needed. Do not invent.
 - If a customer name matches several customers, list a few and ask which one.
@@ -46,7 +49,9 @@ Rules:
   "According to our assumptions, cash ends the week at $X. According to the AI model, which learns from how each customer has
   paid in the past, it is $Y." Lead with our assumptions. If the AI model is not in the tool result, give our assumptions only
   and say the AI model is not available right now. Do not blend them or pick one as "right"; if they differ a lot, say so in one sentence.
-- If asked how the two views differ (this you may answer without a tool): our assumptions assume each open invoice and bill is paid on
+- For "lowest", "run out" or "will we go negative" questions, give the lowest week for each view (lowest_in_range for our assumptions,
+  lowest_in_range_ml for the AI model), with the week and the amount.
+- If asked how the two views differ (call no_data_needed, then answer in words): our assumptions assume each open invoice and bill is paid on
   its expected date; the AI model moves that date for each customer or vendor based on how they have actually paid in the past, and
   also gives a likely range. Neither is a guarantee.
 - Use only those two names. Never say "ML", "machine learning", "rules", "standard timing", "timing rules" or "percentile";
@@ -59,7 +64,7 @@ Rules:
 - What you can answer: the cash forecast by week, where cash goes by purpose, receivables and payables aging with DSO/DPO
   and concentration, overdue invoices and bills to act on, what one customer has paid, and which customers pay fastest or slowest.
 - For anything outside that (other systems, causes or reasons the data does not hold, predictions beyond the forecast,
-  people, anything not in the tools), start with exactly "I don't have that in our data." then say in one line what you can answer instead.
+  people, anything not in the tools, and reasons for why something changed or trends over past quarters), start with exactly "I don't have that in our data." then say in one line what you can answer instead.
   Never fill the gap with a guess or general knowledge.
 Dates are Fridays that end forecast weeks. Today is {today}.
 {freshness}"""
@@ -102,6 +107,7 @@ def events(question: str, history: list[dict] | None = None, ctx: Context | None
     model = os.environ.get("OPENAI_MODEL", "gpt-4.1-mini")
     msgs = [{"role": "system", "content": SYSTEM.format(today=ctx.today.isoformat(), freshness=_freshness(ctx))}]
     msgs += [{"role": m["role"], "content": str(m["content"])} for m in (history or [])[-MAX_HISTORY:] if m.get("role") in ("user", "assistant")]
+    earlier = [v for m in msgs[1:] if m["role"] == "assistant" for v in figures_in(m["content"])]
     msgs.append({"role": "user", "content": question})
     spec = [{"type": "function", "function": s} for s in SPECS]
     used: list[dict] = []
@@ -111,7 +117,9 @@ def events(question: str, history: list[dict] | None = None, ctx: Context | None
     answer_text = ""
     for _ in range(MAX_STEPS):
         text, calls = "", {}
-        for ch in post({"model": model, "messages": msgs, "tools": spec, "temperature": 0}):
+        # the first step of every turn must pick a tool (a data tool, or no_data_needed), so an answer can never come from memory
+        req = {"model": model, "messages": msgs, "tools": spec, "temperature": 0, **({} if used else {"tool_choice": "required"})}
+        for ch in post(req):
             if not ch.get("choices"):
                 continue
             d = ch["choices"][0].get("delta") or {}
@@ -126,7 +134,7 @@ def events(question: str, history: list[dict] | None = None, ctx: Context | None
                 c["function"]["name"] += f.get("name") or ""
                 c["function"]["arguments"] += f.get("arguments") or ""
         if not calls:
-            bad = unverified(answer_text, results) if results else []
+            bad = unverified(answer_text, results, earlier)
             if bad:
                 yield {"type": "check", "unverified": bad}
             yield {"type": "done", "tools_used": used, "run_date": (ctx.run or {}).get("run_date")}
@@ -140,7 +148,8 @@ def events(question: str, history: list[dict] | None = None, ctx: Context | None
             except ValueError:
                 args = {}
             used.append({"tool": name, "args": args})
-            yield {"type": "tool", "tool": name}
+            if name != NO_DATA:
+                yield {"type": "tool", "tool": name}
             res = run_tool(name, args, ctx)
             results.append(res)
             chart = chart_for(name, res)
