@@ -229,8 +229,8 @@ export function LeadChart({
         </div>
       </div>
       {mlPending ? (
-        <div className="chart tall chart-wait">
-          <span>Loading the AI model line…</span>
+        <div className="chart tall chart-wait skeleton">
+          <span className="shimmer">Loading the AI model line…</span>
         </div>
       ) : (
         <div className="chart tall">

@@ -56,7 +56,7 @@ export function AssumptionsPage() {
           ) : loans.error ? (
             <p className="insight warn">Loans could not be loaded: {loans.error.message}</p>
           ) : (
-            <p className="sub">Loading…</p>
+            <p className="sub shimmer">Loading…</p>
           )
         ) : error ? (
           <p className="insight warn">This table could not be loaded: {error.message}</p>

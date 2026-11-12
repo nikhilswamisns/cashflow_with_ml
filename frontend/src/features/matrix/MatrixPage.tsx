@@ -47,8 +47,8 @@ export function MatrixPage() {
         {error ? (
           <p className="insight warn">The matrix could not be loaded: {error.message}</p>
         ) : isPending || !data ? (
-          <div className="chart chart-wait">
-            <span>Loading the matrix…</span>
+          <div className="chart chart-wait skeleton">
+            <span className="shimmer">Loading the matrix…</span>
           </div>
         ) : (
           <MatrixTable data={data} weeks={weeks} query={query} />

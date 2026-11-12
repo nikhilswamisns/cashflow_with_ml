@@ -219,6 +219,36 @@ h2 {
   text-align: center;
   color: var(--muted);
 }
+/* Loading text: a light band sweeps across the words. Loading boxes: the same sweep across the empty chart area. */
+.loading,
+.shimmer {
+  background: linear-gradient(100deg, var(--muted) 35%, var(--text) 50%, var(--muted) 65%) 100% 0 / 250% 100% no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: ui-shimmer 1.6s linear infinite;
+}
+.chart-wait.skeleton {
+  background: linear-gradient(100deg, var(--surface-2) 30%, var(--surface) 50%, var(--surface-2) 70%) 100% 0 / 250% 100% no-repeat;
+  animation: ui-shimmer 1.6s linear infinite;
+}
+@keyframes ui-shimmer {
+  to {
+    background-position: 0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading,
+  .shimmer {
+    animation: none;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+  }
+  .chart-wait.skeleton {
+    animation: none;
+    background: var(--surface-2);
+  }
+}
 .chart-wait {
   display: grid;
   place-items: center;

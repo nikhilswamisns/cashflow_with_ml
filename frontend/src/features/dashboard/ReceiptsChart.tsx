@@ -54,8 +54,8 @@ export function ReceiptsChart({ d, pending }: { d: DashboardData; pending: boole
             <p className="sub">Cash in per week, split by how certain it is. No costs.</p>
           </div>
         </div>
-        <div className="chart chart-wait">
-          <span>
+        <div className={`chart chart-wait ${pending ? 'skeleton' : ''}`}>
+          <span className={pending ? 'shimmer' : undefined}>
             {pending
               ? 'Loading…'
               : 'Expected receipts are not available for this run (the revenue forecast files may be missing on the server).'}
