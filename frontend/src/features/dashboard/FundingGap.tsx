@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { DashboardData } from '@/features/dashboard/types'
+import { KpiCard, type KpiSlide } from '@/features/dashboard/KpiCard'
 import { useLoans } from '@/features/loans/hooks'
 import { fullDates, usd } from '@/shared/format'
 
@@ -14,33 +15,27 @@ export function FundingGap({ d }: { d: DashboardData }) {
     const min = Math.min(...a)
     return { name, min, i: a.indexOf(min), need: Math.max(0, buffer - min), below: a.filter((v) => v < 0).length }
   })
-  const worst = stats.reduce((a, b) => (b.need > a.need ? b : a))
-  const most = stats.reduce((a, b) => (b.below > a.below ? b : a))
-  const items: [string, string, string, string][] = [
-    [
-      'Peak funding need',
-      usd(worst.need),
-      worst.need > 0 ? 'neg' : 'pos',
-      worst.need > 0
-        ? `Lowest cash ${usd(worst.min)} in the week ending ${dates[worst.i]} (${worst.name}), against a ${usd(buffer)} buffer.`
-        : `No gap: cash stays above the ${usd(buffer)} buffer on every line.`,
-    ],
-    [
-      'Weeks below zero',
-      String(most.below),
-      most.below > 0 ? 'neg' : 'pos',
-      `Weeks with ending cash under $0, out of ${d.cash_rules.length} (${most.name}${stats.length > 1 ? ', the worse of the two' : ''}).`,
-    ],
-  ]
+  const tag = (n: string) => (stats.length > 1 ? '' : ` (${n})`) // with two views the card's own label says which one is showing
+  const view = (n: string) => (n === 'AI model' ? 'AI model' : 'Our assumptions')
+  const needSlides: KpiSlide[] = stats.map((s) => ({
+    view: view(s.name),
+    value: usd(s.need),
+    tone: s.need > 0 ? 'neg' : 'pos',
+    note:
+      s.need > 0
+        ? `Lowest cash ${usd(s.min)} in the week ending ${dates[s.i]}${tag(s.name)}, against a ${usd(buffer)} buffer.`
+        : `No gap: cash stays above the ${usd(buffer)} buffer${tag(s.name)}.`,
+  }))
+  const belowSlides: KpiSlide[] = stats.map((s) => ({
+    view: view(s.name),
+    value: String(s.below),
+    tone: s.below > 0 ? 'neg' : 'pos',
+    note: `Weeks with ending cash under $0, out of ${d.cash_rules.length}${tag(s.name)}.`,
+  }))
   return (
     <section className={`kpis ${loans ? 'kpis3' : 'kpis-2'}`}>
-      {items.map(([l, v, c, n]) => (
-        <div className="kpi" key={l}>
-          <div className="kpi-label">{l}</div>
-          <div className={`kpi-value ${c}`}>{v}</div>
-          <div className="kpi-note">{n}</div>
-        </div>
-      ))}
+      <KpiCard label="Peak funding need" slides={needSlides} />
+      <KpiCard label="Weeks below zero" slides={belowSlides} />
       {loans && (
         <div className="kpi">
           <div className="kpi-label">Credit headroom</div>

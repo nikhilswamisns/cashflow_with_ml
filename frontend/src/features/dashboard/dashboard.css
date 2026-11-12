@@ -77,3 +77,71 @@
 .lead {
   display: block;
 }
+
+/* KPI cards that swap between "our assumptions" and "the AI model" */
+.kpi-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.kpi-view {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+  animation: kpi-chip 0.4s ease both;
+}
+.kpi-stack {
+  display: grid;
+}
+.kpi-slide {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease;
+  pointer-events: none;
+}
+.kpi-slide.on {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.kpi-dots {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.kpi-dots button {
+  width: 18px;
+  height: 4px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  background: var(--border-strong, var(--border));
+  cursor: pointer;
+}
+.kpi-dots button.on {
+  background: var(--brand-solid, currentColor);
+}
+.kpi-swap:focus-within .kpi-dots button:focus-visible {
+  outline: 2px solid var(--brand-solid, currentColor);
+  outline-offset: 2px;
+}
+@keyframes kpi-chip {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kpi-slide {
+    transition: none;
+  }
+}
