@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { BlockLoading } from '@/shared/ui/Loading'
 import { Line } from 'react-chartjs-2'
 import type { Chart, ChartData, Plugin, ScriptableContext } from 'chart.js'
 import type { DashboardData } from '@/features/dashboard/types'
@@ -229,9 +230,7 @@ export function LeadChart({
         </div>
       </div>
       {mlPending ? (
-        <div className="chart tall chart-wait skeleton">
-          <span className="shimmer">Loading the AI model line…</span>
-        </div>
+        <BlockLoading tall />
       ) : (
         <div className="chart tall">
           <Line data={data} options={chartOptions} plugins={plugins} />

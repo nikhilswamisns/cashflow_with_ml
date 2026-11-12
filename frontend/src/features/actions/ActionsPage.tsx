@@ -1,4 +1,5 @@
 import { useActions } from '@/features/actions/hooks'
+import { PageLoading } from '@/shared/ui/Loading'
 import type { ActionItem } from '@/features/actions/types'
 import { useRun } from '@/features/runs/RunProvider'
 import { dlabel, usd } from '@/shared/format'
@@ -49,11 +50,7 @@ export function ActionsPage() {
   const { runId } = useRun()
   const { data: a, isPending, error } = useActions(runId)
   if (isPending && runId)
-    return (
-      <main className="page">
-        <div className="loading">Loading…</div>
-      </main>
-    )
+    return <PageLoading />
   if (!a)
     return (
       <main className="page">

@@ -1,4 +1,5 @@
 import { useDashboard } from '@/features/dashboard/hooks'
+import { PageLoading } from '@/shared/ui/Loading'
 import { useRun } from '@/features/runs/RunProvider'
 import { Kpis } from '@/features/dashboard/Kpis'
 import { FundingGap } from '@/features/dashboard/FundingGap'
@@ -19,11 +20,7 @@ export function DashboardPage() {
       </main>
     )
   if (!d)
-    return (
-      <main className="page">
-        <div className="loading">Loading…</div>
-      </main>
-    )
+    return <PageLoading />
   return (
     <main className="page">
       <Kpis d={d} syncedLabel={run?.syncedLabel} />

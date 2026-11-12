@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PageLoading } from '@/shared/ui/Loading'
 import { useRevenueForecast } from '@/features/revenue/hooks'
 import { RevenueChart } from '@/features/revenue/RevenueChart'
 import { PeriodsChart } from '@/features/revenue/PeriodsChart'
@@ -26,11 +27,7 @@ export function RevenuePage() {
       </main>
     )
   if (isPending || !d)
-    return (
-      <main className="page">
-        <div className="loading">Loading…</div>
-      </main>
-    )
+    return <PageLoading />
   const s = d.summary,
     a = d.accuracy
   const kpis: [string, string, string][] = [

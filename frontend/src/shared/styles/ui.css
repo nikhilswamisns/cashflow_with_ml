@@ -214,41 +214,6 @@ h2 {
   color: var(--text);
   margin-bottom: 6px;
 }
-.loading {
-  padding: 64px;
-  text-align: center;
-  color: var(--muted);
-}
-/* Loading text: a light band sweeps across the words. Loading boxes: the same sweep across the empty chart area. */
-.loading,
-.shimmer {
-  background: linear-gradient(100deg, var(--muted) 35%, var(--text) 50%, var(--muted) 65%) 100% 0 / 250% 100% no-repeat;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: ui-shimmer 1.6s linear infinite;
-}
-.chart-wait.skeleton {
-  background: linear-gradient(100deg, var(--surface-2) 30%, var(--surface) 50%, var(--surface-2) 70%) 100% 0 / 250% 100% no-repeat;
-  animation: ui-shimmer 1.6s linear infinite;
-}
-@keyframes ui-shimmer {
-  to {
-    background-position: 0 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .loading,
-  .shimmer {
-    animation: none;
-    background: none;
-    -webkit-text-fill-color: currentColor;
-  }
-  .chart-wait.skeleton {
-    animation: none;
-    background: var(--surface-2);
-  }
-}
 .chart-wait {
   display: grid;
   place-items: center;
@@ -371,5 +336,52 @@ h2 {
   }
   .kpis.kpis3 .kpi:first-child {
     grid-column: auto;
+  }
+}
+
+/* One loading look everywhere: grey shapes with a light band sweeping across (see shared/ui/Loading.tsx). */
+.skel {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--text) 7%, var(--surface));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.skel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--surface) 85%, transparent) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: skel-sweep 1.5s ease-in-out infinite;
+}
+.skel-kpi {
+  height: 112px;
+}
+.skel-block {
+  height: 280px;
+}
+.skel-block.tall {
+  height: 340px;
+}
+.skel-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 800px) {
+  .skel-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@keyframes skel-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel::after {
+    animation: none;
+    opacity: 0;
   }
 }

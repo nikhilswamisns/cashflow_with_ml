@@ -1,4 +1,5 @@
 import { useWorkingCapital } from '@/features/workingcapital/hooks'
+import { PageLoading } from '@/shared/ui/Loading'
 import type { Aging, Shares } from '@/features/workingcapital/types'
 import { useRun } from '@/features/runs/RunProvider'
 import { dlabel, usd } from '@/shared/format'
@@ -73,11 +74,7 @@ export function WorkingCapitalPage() {
   const { runId } = useRun()
   const { data: w, isPending, error } = useWorkingCapital(runId)
   if (isPending && runId)
-    return (
-      <main className="page">
-        <div className="loading">Loading…</div>
-      </main>
-    )
+    return <PageLoading />
   if (!w)
     return (
       <main className="page">

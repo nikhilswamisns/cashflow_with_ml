@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { BlockLoading } from '@/shared/ui/Loading'
 import { Line } from 'react-chartjs-2'
 import type { DashboardData } from '@/features/dashboard/types'
 import { dlabel, kfmt, sum } from '@/shared/format'
@@ -54,13 +55,13 @@ export function ReceiptsChart({ d, pending }: { d: DashboardData; pending: boole
             <p className="sub">Cash in per week, split by how certain it is. No costs.</p>
           </div>
         </div>
-        <div className={`chart chart-wait ${pending ? 'skeleton' : ''}`}>
-          <span className={pending ? 'shimmer' : undefined}>
-            {pending
-              ? 'Loading…'
-              : 'Expected receipts are not available for this run (the revenue forecast files may be missing on the server).'}
-          </span>
-        </div>
+        {pending ? (
+          <BlockLoading />
+        ) : (
+          <div className="chart chart-wait">
+            <span>Expected receipts are not available for this run (the revenue forecast files may be missing on the server).</span>
+          </div>
+        )}
       </section>
     )
   }

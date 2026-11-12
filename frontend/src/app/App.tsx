@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react'
+import { PageLoading } from '@/shared/ui/Loading'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '@/shared/theme'
@@ -31,11 +32,7 @@ function Pages() {
   return (
     <ErrorBoundary resetKey={pathname}>
       <Suspense
-        fallback={
-          <main className="page">
-            <div className="loading">Loading…</div>
-          </main>
-        }
+        fallback={<PageLoading />}
       >
         <Routes>
           <Route element={<Shell />}>

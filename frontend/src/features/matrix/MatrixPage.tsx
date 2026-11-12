@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BlockLoading } from '@/shared/ui/Loading'
 import { Download } from 'lucide-react'
 import { useMatrix } from '@/features/matrix/hooks'
 import { exportUrl } from '@/features/runs/api'
@@ -47,9 +48,7 @@ export function MatrixPage() {
         {error ? (
           <p className="insight warn">The matrix could not be loaded: {error.message}</p>
         ) : isPending || !data ? (
-          <div className="chart chart-wait skeleton">
-            <span className="shimmer">Loading the matrix…</span>
-          </div>
+          <BlockLoading />
         ) : (
           <MatrixTable data={data} weeks={weeks} query={query} />
         )}

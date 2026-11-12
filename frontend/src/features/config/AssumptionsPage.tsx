@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BlockLoading } from '@/shared/ui/Loading'
 import { useQuery } from '@tanstack/react-query'
 import { fetchConfig } from '@/features/config/api'
 import { useSearchParams } from 'react-router-dom'
@@ -56,19 +57,12 @@ export function AssumptionsPage() {
           ) : loans.error ? (
             <p className="insight warn">Loans could not be loaded: {loans.error.message}</p>
           ) : (
-            <p className="sub shimmer">Loading…</p>
+            <BlockLoading />
           )
         ) : error ? (
           <p className="insight warn">This table could not be loaded: {error.message}</p>
         ) : !data || (isFetching && !dataUpdatedAt) ? (
-          <textarea
-            className="json-editor"
-            value="Loading…"
-            disabled
-            aria-label="Configuration JSON"
-            rows={24}
-            readOnly
-          />
+          <BlockLoading tall />
         ) : (
           <ConfigForm key={`${table}:${dataUpdatedAt}`} table={table} saved={data} />
         )}
