@@ -37,39 +37,49 @@
   --shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
   --pop: 0 12px 32px rgba(16, 24, 40, 0.14);
 }
-[data-theme='dark'] {
-  --bg: #0b0f14;
-  --surface: #121821;
-  --surface-2: #0f141c;
-  --border: #1f2733;
-  --border-strong: #2b3646;
-  --text: #e8ecf2;
-  --text-2: #aab3c2;
-  --muted: #8590a3;
-  --brand: #5b8def;
-  --brand-solid: #3562d6;
-  --brand-ink: #7da3f5;
-  --brand-soft: rgba(91, 141, 239, 0.14);
-  --pos: #3dd598;
-  --pos-soft: rgba(61, 213, 152, 0.12);
-  --neg: #ff6b7a;
-  --neg-soft: rgba(255, 107, 122, 0.12);
-  --warn: #f2b544;
-  --warn-soft: rgba(242, 181, 68, 0.12);
-  --c-cash: #5b8def;
-  --c-ml: #f2a33a;
-  --c-booked: #6f8ff0;
-  --c-reseller: #2fc4d1;
-  --c-forecast: #f5b657;
-  --c-in: #3dd598;
-  --c-out: #ff6b7f;
-  --c-floor: #ff6b7a;
-  --c-s1: #9b85ff;
-  --c-s2: #ff9a57;
-  --c-s3: #7d8aa0;
-  --c-s4: #5b9bff;
-  --grid: rgba(255, 255, 255, 0.06);
-  --tick: #8590a3;
+
+/* Black: Geist-style. Pure black, hairline grey borders, off-white text, white primary buttons. No glows, no gradients. */
+[data-theme='vercel'] {
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface-2: #111111;
+  --border: #262626;
+  --border-strong: #333333;
+  --text: #ededed;
+  --text-2: #a1a1a1;
+  --muted: #8f8f8f;
+  --brand: #3291ff;
+  --brand-solid: #ededed;
+  --brand-ink: #ffffff;
+  --brand-soft: rgba(255, 255, 255, 0.08);
+  --pos: #4ade80;
+  --pos-soft: rgba(74, 222, 128, 0.1);
+  --neg: #ff5a5f;
+  --neg-soft: rgba(255, 90, 95, 0.12);
+  --warn: #f5a623;
+  --warn-soft: rgba(245, 166, 35, 0.12);
+  --c-cash: #3291ff;
+  --c-ml: #f5a623;
+  --c-booked: #7b8ff5;
+  --c-reseller: #50e3c2;
+  --c-forecast: #f5a623;
+  --c-in: #4ade80;
+  --c-out: #ff5a5f;
+  --c-floor: #ff5a5f;
+  --c-s1: #a78bfa;
+  --c-s2: #f5a623;
+  --c-s3: #737373;
+  --c-s4: #3291ff;
+  --grid: rgba(255, 255, 255, 0.07);
+  --tick: #8f8f8f;
   --shadow: none;
-  --pop: 0 14px 36px rgba(0, 0, 0, 0.55);
+  --pop: 0 0 0 1px #333333, 0 8px 30px rgba(0, 0, 0, 0.9);
+}
+/* filled brand surfaces are near-white here, so their text must be black */
+[data-theme='vercel'] .btn.primary,
+[data-theme='vercel'] .ask-mark,
+[data-theme='vercel'] .msg-q,
+[data-theme='vercel'] .send,
+[data-theme='vercel'] .chat-fab {
+  color: #000;
 }

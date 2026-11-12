@@ -9,7 +9,7 @@ import { logout } from './api'
 import { useUser } from '@/features/shell/hooks'
 import { TITLES } from './nav'
 export function TopBar({ onOpenNav }: { onOpenNav: () => void }) {
-  const { theme, toggle } = useTheme()
+  const { theme, setTheme } = useTheme()
   const { run } = useRun()
   const { sync, syncing } = useSync()
   const { data: me } = useUser()
@@ -48,8 +48,13 @@ export function TopBar({ onOpenNav }: { onOpenNav: () => void }) {
       >
         <Download size={18} />
       </button>
-      <button className="icon-btn" aria-label="Switch theme" data-tip="Switch theme" onClick={toggle}>
-        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+      <button
+        className="icon-btn"
+        aria-label="Switch theme"
+        data-tip="Switch theme"
+        onClick={() => setTheme(theme === 'light' ? 'vercel' : 'light')}
+      >
+        {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
       </button>
       <Menu.Root>
         <Menu.Trigger asChild>
